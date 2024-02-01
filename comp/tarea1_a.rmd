@@ -1,0 +1,111 @@
+---
+output: reprex::reprex_document
+knit: reprex::reprex_render
+---
+
+Tarea 1
+Johnson & Wichern
+
+1.18 Convertir los datos de la tabla a rapidez medida en m/s. Calcular $\bar{x}$,$S_n$, $R$. Interpretar las correlaciones a pares. 
+
+```{r}
+datos <- read.table("T1-9.DAT")
+
+library(dplyr)
+datos <- datos %>% mutate(speed_100 = 100 / V1, speed_200 = 200 / V2,
+speed_400 = 400 / V3, speed_800 = 800 / (V4 * 60),
+speed_1500 = 1500 / (V5 * 60), speed_3000 = 3000 / (V6 * 60),
+speed_marathon = 42195 / (V7 * 60))
+X <- datos %>% select(speed_100, speed_200, speed_400,
+speed_800, speed_1500, speed_3000, speed_marathon)
+```
+
+Vector de medias
+```{r}
+x_bar <- colMeans(X)
+x_bar
+```
+
+Matriz de covarianza
+```{r}
+n <- nrow(X)
+S <- var(X)
+Sn <- (n-1)/n * S
+Sn
+```
+
+Matriz de correlaciones
+```{r}
+R <- cor(X)
+R
+```
+Se puede observar que todas las correlaciones entre los valores de rapidez son positivas. Se puede observar que 
+después del valor 1 de la diagonal principal, las correlaciones tienden a disminuir y antes del valor tienden a aumentar. 
+Cuando la disntancia aumenta el tiempo en completarlo también aumenta, pero naturalmente, la rapidez promedio para
+completar un maratón es menor que la de un circuito de 100 m.  
+
+
+1.20 
+```{r}
+datos <- read.table("T11-4.DAT")
+```
+
+a) Ver el dataset entero en el espacio x1,x2,x3. Rotar los ejes en varias direcciones. Checar obervaciones inusuales. 
+```{r}
+library(plotly)
+
+fig <- plot_ly(datos, x = ~V1, y = ~V2, z = ~V3)
+fig
+```
+Se puede observar que una gran cantidad de puntos se concentran en un cúmulo alrededor 
+del (-0.2, 0.4) en el eje x, (-0.2, 0.2) en el eje y, (1, 3.27) en el eje z.
+El punto con las coordenadas (0.58, 0.04, 5.06) parece ser un dato atípico. 
+b) Colorear los puntos de acuerdo a los que están en bancarrota ¿Hay alguna orientación 
+en la que se pueden distinguir las compañías en bancarrota de las que no lo están? 
+¿Existen observaciones que pueden llegar a tener un impacto significativo en alguna regla para
+clasicar nuevas empresas?
+```{r}
+datos$V5 <- as.factor(datos$V5)
+
+fig <- plot_ly(datos, x = ~V1, y = ~V2, z = ~V3, color = ~V5,
+colors = c("#FF0000", "#0000FF"))
+fig
+```
+Si orientamos el eje X con x2, el eje y con x3 y el eje z con x1 se puede disntiguir a 
+una gran mayoría de las compañías en bancarrota, específicamente, las que están en bancarrota 
+tienden a tener menor x2, menor x3 y menor x1.
+En las empresas que no están en bancarrota un punto que puede tener un gran impacto puede ser el (0.14, -0.03, 0.46) debido a
+que presenta un valor de x3 muy bajo. En el caso de las que sí están en bancarrota podría ser el (0.37, 0.11, 1.99) debido a 
+su valor mayor de x1.  
+
+1.22
+```{r}
+datos <- read.table("T6-12.DAT") %>% select(V1, V2, V3, V4)
+```
+
+```{r}
+x_bar <- colMeans(datos)
+x_bar
+```
+
+a) Graficar el dataset en 3 dimensiones.
+```{r}
+fig <- plot_ly(datos, x = ~V1, y = ~V2, z = ~V3)
+fig
+```
+
+b) Checar outliers.
+Un valor que parece ser un outlier es el (-0.45, -0.41, 1.09)
+ya que sus valores en las tres coordendas son menores que la media. 
+
+1.24 Representar el dataset con caras de Chernoff ¿Existen diferentes grupos?
+
+```{r}
+library(aplpack)
+
+datos <- read.table("T12-4.DAT") %>% select(V1, V2, V3, V4, V5, V6, V7, V8)
+
+faces(datos, face.type = 1)
+```
+
+Existen algunas compañías que sus representaciones se parecen, por ejemplo, la 7, 9, 12 y la 11, 15, 17.

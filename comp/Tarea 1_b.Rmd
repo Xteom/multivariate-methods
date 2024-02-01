@@ -1,0 +1,174 @@
+---
+title: "Tarea 1"
+author: "Aldo Carmona"
+date: "2024-01-29"
+output: html_document
+---
+# Ejercicio 1.2)
+## a)
+scatterplot
+```{r cars}
+library(ggplot2)
+library(ggExtra)
+
+x1 <- c(1, 2, 3, 3, 4, 5, 6, 8, 9, 11)
+x2 <- c(18.95, 19, 17.95, 15.54, 14, 12.95, 8.94, 7.49, 6, 3.99)
+datos <- data.frame(x1, x2)
+
+(plot <- ggplot(datos, aes(x1, x2)) + geom_point())
+```
+
+marginal dot diagram
+```{r}
+plot1 <- ggMarginal(plot, type="histogram")
+plot2 <- ggMarginal(plot, type="boxplot")
+plot3 <- ggMarginal(plot, type="density")
+plot4 <- ggMarginal(plot, type="point")
+
+plot1
+plot2
+plot3
+plot4
+```
+
+## b) 
+Infiero que la covarianza es negativa porque hay una tendencia: entre más años tiene el carro, en menos precio se vende.
+
+## c)
+
+```{r}
+m1 <- mean(x1)
+m2 <- mean(x2)
+
+s11 <- var(x1)
+s22 <- var(x2)
+
+s12 <- cov(x1, x2)
+r12 <- cor(x1, x2)
+
+cat("media x1: ", m1, "\n", 
+       "media x2: ", m2, "\n",
+       "varianza x1: ", s11, "\n",
+       "varianza x2: ", s22, "\n",
+       "covarianza: ", s12, "\n",
+       "correlación: ", r12, "\n")
+```
+Interpretación:
+
+Media x1: 5.2 años. Representa el valor central de los años de antigüedad de los autos.
+
+Media x2: $12,481. Indica el valor central de los precios de los autos.
+
+Varianza x1: 10.62222. Refleja la dispersión de los años de antigüedad de los autos alrededor de su valor central.
+
+Varianza x2: 30.85437. Muestra la dispersión de los precios de los autos alrededor de su valor central.
+
+Covarianza: -17.71022. Indica cómo varían conjuntamente los años de antigüedad y los precios de los autos. Una covarianza negativa sugiere que los autos más antiguos tienden a tener precios más bajos, y viceversa.
+
+Correlación: -0.9782684. Representa la fuerza y la dirección de la relación entre los años de antigüedad y los precios de los autos. Una correlación negativa cercana a -1 indica una fuerte relación inversa: a medida que los años de antigüedad aumentan, los precios tienden a disminuir
+
+## d)
+```{r}
+colMeans(datos)
+var(datos)
+cor(datos)
+```
+
+# Ejercicio 1.4)
+
+## a)
+```{r}
+df <- data.frame(
+  x1 = c(108.28, 152.36, 95.04, 65.45, 62.97, 263.99, 265.19, 285.06, 92.01, 165.68),
+  x2 = c(17.05, 16.59, 10.91, 14.14, 9.52, 25.33, 18.54, 15.73, 8.10, 11.13),
+  x3 = c(1484.10, 750.33, 766.42, 1110.46, 1031.29, 195.26, 193.83, 191.11, 1175.16, 211.15))
+
+plot <- ggplot(df, aes(x1, x2)) + geom_point()
+plot1 <- ggMarginal(plot, type="histogram")
+plot2 <- ggMarginal(plot, type="boxplot")
+plot3 <- ggMarginal(plot, type="density")
+
+plot1
+plot2
+plot3
+```
+Las ventas tienen mucha variabilidad y no parece seguir una distribución normal porque se cargan mucho los datos a la izquierda (es difícil tener ventas grandes). La ganancia parece estar también muy cargada, en general no se dan ganancias grandes, pero sí aumenta conforme aumentan las ventas.
+
+## b)
+
+```{r}
+m1 <- mean(df$x1)
+m2 <- mean(df$x2)
+
+s11 <- var(df$x1)
+s22 <- var(df$x2)
+
+s12 <- cov(df$x1, df$x2)
+r12 <- cor(df$x1, df$x2)
+
+cat("media x1: ", m1, "\n", 
+       "media x2: ", m2, "\n",
+       "varianza x1: ", s11, "\n",
+       "varianza x2: ", s22, "\n",
+       "covarianza: ", s12, "\n",
+       "correlación: ", r12, "\n")
+```
+La correlación no llega a ser fuerte, pero sí hay cierta tendencia entre ambas variables que nos permite decir que ante un aumento de ventas, hay un aumento en el profit.
+
+
+# Ejercicio 1.6)
+## a)
+```{r}
+datos <- read.table("datos/T1-5.DAT", header = FALSE)
+colnames(datos) <- c("Wind", "Solar_radiation", "CO", "NO", "NO2", "O3", "HC")
+
+pairs(datos, pch = 19)
+
+g1 <- ggplot(datos, aes(x = Wind)) +
+  geom_histogram()
+
+g2 <- ggplot(datos, aes(x = Solar_radiation)) +
+  geom_histogram()
+
+g3 <- ggplot(datos, aes(x = CO)) +
+  geom_histogram()
+
+g4 <- ggplot(datos, aes(x = NO)) +
+  geom_histogram()
+
+g5 <- ggplot(datos, aes(x = NO2)) +
+  geom_histogram()
+
+g6 <- ggplot(datos, aes(x = O3)) +
+  geom_histogram()
+
+g7 <- ggplot(datos, aes(x = HC)) +
+  geom_histogram()
+
+
+g1
+g2
+g3
+g4
+g5
+g6
+g7
+```
+
+## b)
+```{r}
+x <- colMeans(datos)
+S <- var(datos)
+R <- cor(datos)
+
+x
+S
+R
+```
+Interpretación:
+
+el vector de medias x nos dice el nivel que podemos esperar de cada medida tomada por el estudio en Los Ángeles, de tal forma que podemos esperar niveles de CO de 4.54 en un día cualquiera en Los Ángeles.
+
+La matriz S nos permite ver un poco sobre la proporcionalidad entre pares de mediciones. Si el signo del elemento $ s_{2,1} $ es negativo, como es el caso, podemos observar que las variables Solar_radiation y Wind tienen tendencias a ser inversamente proporcionales. Al contrario si el signo es positivo, podemos argumentar que hay cierta proporcionalidad o tendencias a ello.
+
+La matriz R nos permite ver la magnitud con la que covarían cierto par de variables, con esto podemos observar que la relación que tienen las variables entre ellas no es para nada fuerte, la correlación más fuerte es 0.55, que pertenece al par de variables (NO2, CO).

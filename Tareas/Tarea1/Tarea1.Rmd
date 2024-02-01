@@ -1,0 +1,31 @@
+---
+title: "Métodos Multivariados: Tarea 1"
+author: "Mateo, Vic, Diego, Aldo (luego lo cambiamos)"
+date: "31/01/2024"   
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, comment = NULL, size = "tiny", warning = FALSE)
+options(width = 100)
+```
+
+```{r}
+library(dplyr)
+library(lattice)
+library(tidyverse)
+library(ggplot2)
+```
+
+## Ejercicio 1
+
+A morning newspaper lists the following used-car prices for a foreign compact with age $x_i$ measurred in years and selling price $x_2$ measurred in thousands of dollars.
+
+```{r}
+#
+```
+```{r}
+
+```
