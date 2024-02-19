@@ -47,9 +47,9 @@ datos <- data.frame(x1, x2)
 marginal dot diagram
 
 ```{r}
-plot1 <- ggMarginal(plot, type="histogram")
-plot2 <- ggMarginal(plot, type="boxplot")
-plot3 <- ggMarginal(plot, type="density")
+plot1 <- ggMarginal(plot, type = "histogram")
+plot2 <- ggMarginal(plot, type = "boxplot")
+plot3 <- ggMarginal(plot, type = "density")
 
 plot1
 plot2
