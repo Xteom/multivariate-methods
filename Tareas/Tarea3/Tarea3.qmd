@@ -1,0 +1,166 @@
+---
+title: 'Métodos Multivariados: Tarea 3'
+author: "Aldo, Diego, Mateo, Victor"
+date: "27/02/2024"
+format: pdf
+editor: visual
+output:
+  pdf_document: 
+    latex_engine: xelatex
+  html_document: default
+editor_options:
+  chunk_output_type: console
+---
+
+## Ejercicio 1
+
+Encuentra los estimados máximo-verosímiles del vector promedio $\mu$ y la matriz de covarianzas $\Sigma$ de la muestra aleatoria $X$ de una población normal bivariada.
+
+La muestra aleatoria $X$ es:
+
+$$
+X = \begin{bmatrix}
+3 & 6 \\
+4 & 4 \\
+5 & 7 \\
+4 & 7 \\
+\end{bmatrix}
+$$
+
+Los estimados máximo-verosímiles son:
+
+Para el vector promedio $\mu$:
+
+$$
+\mu = \begin{pmatrix}
+4.0 \\
+6.0 \\
+\end{pmatrix}
+$$
+
+Para la matriz de covarianzas $\Sigma$:
+$$
+\Sigma = \frac{1}{n-1} \sum_{i=1}^{n} (x_i - \bar{x})(x_i - \bar{x})'
+$$
+
+$$
+\Sigma = \begin{pmatrix}
+\frac{2}{3} & \frac{1}{3} \\
+\frac{1}{3} & 2 \\
+\end{pmatrix}
+$$
+
+## Ejercicio 2
+
+Sean $(x_1, \ldots, x_{20})$ una muestra de una población (N_6 ($\mu$, $\Sigma$)). Especificar cada una de las distribuciones completamente de las siguientes variables:
+
+
+### a. $(x_1 - \mu) \Sigma^{-1} (x_{1} - \mu)$
+
+La variable $(x_1 - \mu)'\Sigma^{-1}(x_1 - \mu)$ es una forma cuadrática que, bajo la suposición de normalidad multivariada, sigue una distribución Chi-cuadrado con $k$ grados de libertad, donde $k$ es la dimensión del vector $x_i$. En este caso, $k = 6$ debido a que la muestra proviene de una distribución normal multivariada de dimensión 6.
+
+
+
+### b. $\bar{x}$ y $\sqrt{n}(\bar{x} - \mu)$
+
+El vector de medias de la muestra $\bar{x}$ sigue una distribución normal multivariada $\mathcal{N}_6 (\mu, \frac{1}{n}\Sigma)$. La variable $\sqrt{n}(\bar{x} - \mu)$, que es un escalamiento de $\bar{x}$, sigue una distribución normal multivariada $\mathcal{N}_6 (0, \Sigma)$ debido al Teorema del Límite Central, que aplica incluso en el contexto multivariado.
+
+
+### c. $(n - 1)S$
+
+La matriz $S$ es la matriz de covarianzas de la muestra y, al multiplicarla por $(n - 1)$, obtenemos una variable que sigue una distribución Wishart con $n-1$ grados de libertad y matriz de parámetro $\Sigma$. Esto se debe a que la distribución Wishart es la generalización de la distribución Chi-cuadrado para matrices de covarianzas muestrales.
+
+
+
+### d. $n(\bar{x} - \mu)'\Sigma^{-1}(x - \mu)$ (distribución aproximada)
+
+La variable $n(\bar{x} - \mu)'\Sigma^{-1}(\bar{x} - \mu)$ es una forma cuadrática basada en la media de la muestra. Bajo la suposición de normalidad multivariada, seguiría una distribución Chi-cuadrado con $k$ grados de libertad si $\bar{x}$ fuera la verdadera media poblacional. Sin embargo, como $\bar{x}$ es una estimación, la distribución resultante es solo aproximadamente Chi-cuadrado y esta aproximación mejora con el tamaño de la muestra. En este caso, $k = 6$ ya que es la dimensión del vector $\bar{x}$.
+
+
+## Ejercicio 3
+
+Harry Roberts, un naturalista del Departamento de Pesca de Alaska, estudia a los osos grizzly con el objetivo de mantener una población sana. Medidas de n = 61 osos dan los siguientes estimados de $\bar{x}$ y $S$. Las variables son: peso (kg), longitud del cuerpo (cm), cuello (cm), circunferencia (cm), longitud de la cabeza (cm), ancho de la cabeza (cm):
+
+```{r, echo=TRUE}
+n <- 61 # 61 osos
+xbar <- c(95.52, 164.38, 55.69, 93.39, 17.98, 31.13)
+S <- matrix(c(3266.46, 1343.97, 731.54, 1175.50, 162.68, 238.37,
+              1343.97, 721.91, 324.25, 537.35, 80.17, 117.73,
+              731.54, 324.25, 179.28, 281.17, 39.15, 56.80,
+              1175.50, 537.35, 281.17, 474.98, 63.73, 94.85,
+              162.68, 80.17, 39.15, 63.73, 9.95, 13.88,
+              238.37, 117.73, 56.80, 94.85, 13.88, 21.26), 
+            nrow = 6)
+```
+
+a. Obtener los intervalos de confianza simultáneos de 95 % para muestras grandes para las seis medias poblacionales de medidas corporales.
+
+```{r, echo=TRUE}
+
+S <- sqrt(diag(S)) # Convertimos la varianza en desviación estándar
+
+# Intervalos de confianza simultáneos de 95%
+alpha <- 0.05
+t_critical <- qt(1 - alpha/2, df=n-1) # Valor crítico de t para dos colas
+cat("Valor crítico con t de dos colas: ",t_critical)
+
+# Cálculos de los intervalos de confianza
+CI <- sapply(1:length(xbar), function(i) {
+  se <- S[i] / sqrt(n)
+  lower_bound <- xbar[i] - t_critical * se
+  upper_bound <- xbar[i] + t_critical * se
+  return(c(lower_bound, upper_bound))
+})
+CI <- t(CI) # Transponemos para obtener una matriz más legible
+CI
+```
+
+b. Obtener la elipse de confianza simultánea del 95 % de grandes muestras para el peso medio y la circunferencia media.
+
+c. Obtener los intervalos de confianza Bonferronizados del 95 % para las seis medias en la parte (a).
+
+d. Referirse a pa parte (b). Construir el rectángulo de confianza Bonferroni de 95 % para el peso medio y la circunferencia media usando $m$ = 6. Comparar este rectángulo con la elipse de confianza en la parte (b).
+
+e. Obtener el intevalo de confianza de 95 % de Bonferroni para la diferencia del ancho
+medio de la cabeza y el largo medio de la cabeza usando $m$ = 6 + 1 = 7 para considerar
+esta afirmación así como para cada media individual.
+
+
+
+
+## Ejercicio 4
+
+
+```{r, echo=TRUE}
+
+datos <- data.frame(x1 = c(3, 4, 5, 4), x2 = c(6, 4, 7, 7))
+NLL = function(pars, data) {
+  # Extract parameters from the vector
+  mu = pars[1]
+  sigma = pars[2]
+  # Calculate Negative Log-LIkelihood
+  -sum(dnorm(x = data, mean = mu, sd = sigma, log = TRUE))
+}
+
+mle = optim(par = c(mu = 0.2, sigma = 1.5), fn = NLL, data = as.matrix(datos),
+            control = list(parscale = c(mu = 0.2, sigma = 1.5)))
+mle$par
+
+
+
+# Carga de librerías
+library(tidyverse)
+
+# Definición del conjunto de datos
+datos <- matrix(c(4, 4, NA, 8, NA, 3, 5, NA), nrow = 4, ncol = 3)
+
+# Imprimir datos
+print(datos)
+library(Amelia)
+a.out <- amelia(datos, m = 10, idvars=3) # idvars informs the columns that are identification variables
+
+a.out$imputations
+
+
+
+```
