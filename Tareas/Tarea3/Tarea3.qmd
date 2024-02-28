@@ -1,7 +1,7 @@
 ---
 title: 'Métodos Multivariados: Tarea 3'
-author: "Aldo, Diego, Mateo, Victor"
-date: "27/02/2024"
+author: "Aldo Carmona, Diego Arellano, Mateo De La Roche, Victor Contreras"
+published_date: "27/02/2024"
 format: pdf
 editor: visual
 output:
@@ -38,7 +38,7 @@ $$
 \end{pmatrix}
 $$
 
-Para la matriz de covarianzas $\Sigma$:
+Para la matriz de covarianzas $\Sigma$: 
 $$
 \Sigma = \frac{1}{n-1} \sum_{i=1}^{n} (x_i - \bar{x})(x_i - \bar{x})'
 $$
@@ -52,30 +52,23 @@ $$
 
 ## Ejercicio 2
 
-Sean $(x_1, \ldots, x_{20})$ una muestra de una población (N_6 ($\mu$, $\Sigma$)). Especificar cada una de las distribuciones completamente de las siguientes variables:
-
+Sean $(x_1, \ldots, x_{20})$ una muestra de una población ($N_6$ ($\mu$, $\Sigma$)). Especificar cada una de las distribuciones completamente de las siguientes variables:
 
 ### a. $(x_1 - \mu) \Sigma^{-1} (x_{1} - \mu)$
 
 La variable $(x_1 - \mu)'\Sigma^{-1}(x_1 - \mu)$ es una forma cuadrática que, bajo la suposición de normalidad multivariada, sigue una distribución Chi-cuadrado con $k$ grados de libertad, donde $k$ es la dimensión del vector $x_i$. En este caso, $k = 6$ debido a que la muestra proviene de una distribución normal multivariada de dimensión 6.
 
-
-
 ### b. $\bar{x}$ y $\sqrt{n}(\bar{x} - \mu)$
 
 El vector de medias de la muestra $\bar{x}$ sigue una distribución normal multivariada $\mathcal{N}_6 (\mu, \frac{1}{n}\Sigma)$. La variable $\sqrt{n}(\bar{x} - \mu)$, que es un escalamiento de $\bar{x}$, sigue una distribución normal multivariada $\mathcal{N}_6 (0, \Sigma)$ debido al Teorema del Límite Central, que aplica incluso en el contexto multivariado.
-
 
 ### c. $(n - 1)S$
 
 La matriz $S$ es la matriz de covarianzas de la muestra y, al multiplicarla por $(n - 1)$, obtenemos una variable que sigue una distribución Wishart con $n-1$ grados de libertad y matriz de parámetro $\Sigma$. Esto se debe a que la distribución Wishart es la generalización de la distribución Chi-cuadrado para matrices de covarianzas muestrales.
 
-
-
 ### d. $n(\bar{x} - \mu)'\Sigma^{-1}(x - \mu)$ (distribución aproximada)
 
 La variable $n(\bar{x} - \mu)'\Sigma^{-1}(\bar{x} - \mu)$ es una forma cuadrática basada en la media de la muestra. Bajo la suposición de normalidad multivariada, seguiría una distribución Chi-cuadrado con $k$ grados de libertad si $\bar{x}$ fuera la verdadera media poblacional. Sin embargo, como $\bar{x}$ es una estimación, la distribución resultante es solo aproximadamente Chi-cuadrado y esta aproximación mejora con el tamaño de la muestra. En este caso, $k = 6$ ya que es la dimensión del vector $\bar{x}$.
-
 
 ## Ejercicio 3
 
@@ -93,11 +86,14 @@ S <- matrix(c(3266.46, 1343.97, 731.54, 1175.50, 162.68, 238.37,
             nrow = 6)
 ```
 
-a. Obtener los intervalos de confianza simultáneos de 95 % para muestras grandes para las seis medias poblacionales de medidas corporales.
+a.  Obtener los intervalos de confianza simultáneos de 95 % para muestras grandes para las seis medias poblacionales de medidas corporales.
+
+Para cada una de las seis variables, el intervalo de confianza del 95% se calcula como $\bar{x} \pm t_{\frac{\alpha}{2}, n-1} \times \frac{S}{\sqrt{n}}$, donde $\bar{x}$ es la media muestral, $S$ es la desviación estándar de la muestra, $n$ es el tamaño de la muestra, y $t_{\frac{\alpha}{2}, n-1}$ es el valor crítico de la distribución t de Student con $n-1$ grados de libertad.
+
 
 ```{r, echo=TRUE}
 
-S <- sqrt(diag(S)) # Convertimos la varianza en desviación estándar
+S_sqrt <- sqrt(diag(S)) # Convertimos la varianza en desviación estándar
 
 # Intervalos de confianza simultáneos de 95%
 alpha <- 0.05
@@ -106,7 +102,7 @@ cat("Valor crítico con t de dos colas: ",t_critical)
 
 # Cálculos de los intervalos de confianza
 CI <- sapply(1:length(xbar), function(i) {
-  se <- S[i] / sqrt(n)
+  se <- S_sqrt[i] / sqrt(n)
   lower_bound <- xbar[i] - t_critical * se
   upper_bound <- xbar[i] + t_critical * se
   return(c(lower_bound, upper_bound))
@@ -115,52 +111,409 @@ CI <- t(CI) # Transponemos para obtener una matriz más legible
 CI
 ```
 
-b. Obtener la elipse de confianza simultánea del 95 % de grandes muestras para el peso medio y la circunferencia media.
+b.  Obtener la elipse de confianza simultánea del 95 % de grandes muestras para el peso medio y la circunferencia media.
 
-c. Obtener los intervalos de confianza Bonferronizados del 95 % para las seis medias en la parte (a).
-
-d. Referirse a pa parte (b). Construir el rectángulo de confianza Bonferroni de 95 % para el peso medio y la circunferencia media usando $m$ = 6. Comparar este rectángulo con la elipse de confianza en la parte (b).
-
-e. Obtener el intevalo de confianza de 95 % de Bonferroni para la diferencia del ancho
-medio de la cabeza y el largo medio de la cabeza usando $m$ = 6 + 1 = 7 para considerar
-esta afirmación así como para cada media individual.
+```{r, include=FALSE}
+library(ellipse)
+```
 
 
+```{r, echo=TRUE}
+# Seleccionamos las covarianzas para el peso y la circunferencia del matriz S original
+cov_matrix <- S[c(1, 4), c(1, 4)]
+
+# Calculamos la elipse de confianza para el 95%
+ellipse_data <- ellipse(cov_matrix, centre = xbar[1:2], level = 0.95)
+
+# Graficamos la elipse
+plot(ellipse_data, type = 'l', xlab = 'Peso', ylab = 'Circunferencia', 
+     main = 'Ellipse 95% de confianza')
+points(xbar[1], xbar[2], pch = 19, col = 'red')  # Añadir el punto central
+```
+
+c.  Obtener los intervalos de confianza Bonferronizados del 95 % para las seis medias en la parte (a).
+
+
+```{r, echo=TRUE}
+# Intervalos de confianza Bonferronizados del 95%
+alpha_bonferroni <- alpha / length(xbar)
+t_critical_bonferroni <- qt(1 - alpha_bonferroni/2, df=n-1)
+
+CI_bonferroni <- sapply(1:length(xbar), function(i) {
+  se <- S[i] / sqrt(n)
+  lower_bound <- xbar[i] - t_critical_bonferroni * se
+  upper_bound <- xbar[i] + t_critical_bonferroni * se
+  return(c(lower_bound, upper_bound))
+})
+CI_bonferroni <- t(CI_bonferroni)
+
+for (i in 1:nrow(CI_bonferroni)) {
+  cat(sprintf("Variable %d: Intervalo de confianza del 95%% Bonferronizado: [%f, %f]\n", 
+              i, CI_bonferroni[i, 1], CI_bonferroni[i, 2]))
+}
+```
+
+d.  Referirse a pa parte (b). Construir el rectángulo de confianza Bonferroni de 95 % para el peso medio y la circunferencia media usando $m$ = 6. Comparar este rectángulo con la elipse de confianza en la parte (b).
+
+El rectángulo de confianza Bonferroni se traza utilizando los intervalos de confianza Bonferronizados para el peso medio y la circunferencia media, proporcionando una región de confianza que es más conservadora que la elipse de confianza.
+
+```{r echo=TRUE}
+# Intervalos de confianza Bonferronizados para el peso medio y la circunferencia media
+CI_bonferroni_peso <- CI_bonferroni[1, ]
+CI_bonferroni_circunferencia <- CI_bonferroni[4, ]
+
+# Dibuja el rectángulo de confianza Bonferroni
+plot(NULL, xlim=c(min(CI_bonferroni_peso), max(CI_bonferroni_peso)), 
+     ylim=c(min(CI_bonferroni_circunferencia),                                                            
+            max(CI_bonferroni_circunferencia)), 
+     xlab="Peso", ylab="Circunferencia", 
+     main="Rectángulo de Confianza Bonferroni")
+rect(CI_bonferroni_peso[1], CI_bonferroni_circunferencia[1], 
+     CI_bonferroni_peso[2], CI_bonferroni_circunferencia[2],
+     col='skyblue', border='blue')
+points(xbar[1], xbar[4], pch=19, col='red')
+```
+
+e.  Obtener el intevalo de confianza de 95 % de Bonferroni para la diferencia del ancho medio de la cabeza y el largo medio de la cabeza usando $m$ = 6 + 1 = 7 para considerar esta afirmación así como para cada media individual.
+
+Para la diferencia entre el ancho medio y el largo medio de la cabeza, el intervalo de confianza de Bonferroni se calcula como sigue:
+
+$$
+(\bar{x}_{ancho} - \bar{x}_{largo}) \pm t_{\frac{\alpha}{2m}, n-1} \times S_{diferencia}
+$$
+
+donde $S_{diferencia}$ es la desviación estándar de la diferencia entre las dos medias, $n$ es el tamaño de la muestra, $m$ es el número total de pruebas o comparaciones, y $t_{\frac{\alpha}{2m}, n-1}$ es el valor crítico de la distribución t de Student con $n-1$ grados de libertad ajustado para $m$ comparaciones.
+
+```{r echo=TRUE}
+# Asumiendo que la sexta y quinta columnas de xbar y S corresponden
+# al ancho y largo de la cabeza, respectivamente
+xbar_ancho <- xbar[6]
+xbar_largo <- xbar[5]
+S_ancho <- S[5]
+S_largo <- S[6]
+
+# Calculamos la desviación estándar de la diferencia
+S_diferencia <- sqrt((S_ancho^2 + S_largo^2) / n)
+
+# Intervalo de confianza Bonferroni para la diferencia
+alpha_bonferroni_diferencia <- alpha / 7
+t_critical_bonferroni_diferencia <- qt(1 - alpha_bonferroni_diferencia/2, df=n-1)
+
+# Límites del intervalo de confianza para la diferencia
+lower_bound_diferencia <- 
+  (xbar_ancho - xbar_largo) - t_critical_bonferroni_diferencia * S_diferencia
+upper_bound_diferencia <- 
+  (xbar_ancho - xbar_largo) + t_critical_bonferroni_diferencia * S_diferencia
+
+# Imprimir el intervalo de confianza para la diferencia
+cat(sprintf("Intervalo de confianza del 95%% Bonferronizado para la diferencia entre 
+            \nel ancho y largo de la cabeza: [%f, %f]\n", 
+            lower_bound_diferencia, upper_bound_diferencia))
+```
 
 
 ## Ejercicio 4
 
-
-```{r, echo=TRUE}
-
-datos <- data.frame(x1 = c(3, 4, 5, 4), x2 = c(6, 4, 7, 7))
-NLL = function(pars, data) {
-  # Extract parameters from the vector
-  mu = pars[1]
-  sigma = pars[2]
-  # Calculate Negative Log-LIkelihood
-  -sum(dnorm(x = data, mean = mu, sd = sigma, log = TRUE))
-}
-
-mle = optim(par = c(mu = 0.2, sigma = 1.5), fn = NLL, data = as.matrix(datos),
-            control = list(parscale = c(mu = 0.2, sigma = 1.5)))
-mle$par
-
-
-
+```{r, include=FALSE}
 # Carga de librerías
 library(tidyverse)
+library(Amelia)
+```
+
+```{r}
+# Carga de librerías
+
 
 # Definición del conjunto de datos
 datos <- matrix(c(4, 4, NA, 8, NA, 3, 5, NA), nrow = 4, ncol = 3)
 
 # Imprimir datos
 print(datos)
-library(Amelia)
-a.out <- amelia(datos, m = 10, idvars=3) # idvars informs the columns that are identification variables
+
+# idvars informs the columns that are identification variables
+a.out <- amelia(datos, m = 10, idvars=3) 
 
 a.out$imputations
 
+```
+## Ejercicio 4 (Versión 2)
 
+Dados los datos $X = \begin{pmatrix} 3 & 6 & 0 \\ 4 & 4 & 3 \\ NA & 8 & 3 \\ 5 & NA & NA \end{pmatrix}$ con componentes faltantes, usar el algoritmo EM para estimar $\mu$ y $\Sigma$. Determinar los estimados iniciales, e iterar para encontrar los primeros estimados revisados.
+
+```{r}
+X1 <- c(3,4,NA,5)
+X2 <- c(6,4,8,NA)
+X3 <- c(0,3,3,NA)
+X <- data.frame(X1,X2,X3)
+n <- nrow(X)
+
+mu_est <- colMeans(X, na.rm = TRUE)
+
+for (col in names(X)) {
+  X[[col]][is.na(X[[col]])] <- mu_est[which(names(X) == col)]
+}
+
+var_est <- (n-1)/n * var(X)
+
+for(i in (i:5)) {
+
+  x_31 <- mu_est[1] + var_est[1, 2:3] %*% 
+    solve(var_est[2:3, 2:3]) %*% 
+    t(X[3, 2:3] - mu_est[2:3])
+  
+  x_31x_32 <- x_31*X[3,2] 
+  
+  x_31x_33 <- x_31*X[3,3] 
+  
+  x2_31 <- var_est[1,1] - var_est[1, 2:3] %*% 
+    solve(var_est[2:3, 2:3]) %*% 
+    var_est[2:3,1]+ x_31**2
+  
+  x_42_43 <- mu_est[2:3] + var_est[1, 2:3] %*% 
+    solve(var_est[1,1]) %*% 
+    t(X[4, 1] - mu_est[1])
+  
+  x_41x_42_43 <- x_42_43 * X[4,1]
+  
+  x2_42_43 <- var_est[2:3,2:3] - var_est[1, 2:3] %*% 
+    solve(var_est[1,1]) %*% 
+    var_est[2:3,1] + x_42_43 %*% 
+    t(x_42_43)
+  
+  T1 <- c(X[1,1]+X[2,1]+x_31+X[4, 1], X[1,2]+X[2,2]+X[3,2]+x_42_43[1], 
+          X[1,3]+X[2,3]+X[3,3]+x_42_43[2])
+  
+  
+  x_1_var <- X[1,1]**2 + X[2,1]**2 + x2_31 + X[4,1]**2
+  
+  x_2_var <- X[1,2]**2 + X[2,2]**2 + X[3,2]**2 + x2_42_43[1,1]
+  
+  x_3_var <- X[1,3]**2 + X[2,3]**2 + X[3,3]**2 + x2_42_43[2,2]
+  
+  x_12_cov <- X[1,1]*X[1,2] + X[2,1]*X[2,2] + x_31x_32 + x_41x_42_43[1,1]
+  
+  x_13_cov <- X[1,1]*X[1,3] + X[2,1]*X[2,3] + x_31x_33 + x_41x_42_43[2,1]
+  
+  x_23_cov <- X[1,2]*X[1,3] + X[2,2]*X[2,3] + X[3,2]*X[3,3] + x2_42_43[1,2]
+  
+  T2 <- matrix(c(x_1_var, x_12_cov, x_13_cov, 
+                 x_12_cov, x_2_var, x_23_cov, 
+                 x_13_cov, x_23_cov, x_3_var), nrow = 3, ncol = 3)
+  
+  mu_est <- 1/n * (T1)
+  var_est <- 1/n * T2 - mu_est%*%t(mu_est)
+}
+```
+
+
+## Ejercicio 5
+Este ejercicio se refiere al ave conocida como milano picogarfio
+
+```{r}
+X <- read.delim("https://raw.githubusercontent.com/jvega68/EA3/master/datos/J&W/T5-12.DAT",
+                sep = "", header = F)
+str(X)
+```
+
+a. Encuentra y bosqueja la elipse de 95% de confianza para las medias poblacionales
+$\mu_1$ y $\mu_2$. Supongan que se sabe que $\mu_1$ = 190mm y $\mu_2$ = 275mm para machos milanos
+picogarfios. ¿Son valores plausibles para la longitud media de la cola y longitud media
+del ala para los pájaros hembras? Explicar.
+
+```{r}
+set.seed(1)
+
+x_bar <- colMeans(X)
+
+S <- var(X)
+
+library(ellipse)
+par(pty = "s")
+plot(X, pch = 16, cex = 1.2, 
+     main= "Datos del Milano picogarfio")
+lines(ellipse(0, centre = x_bar,  t = sqrt(qchisq(0.95,2))))
+points(x_bar[1],x_bar[2], col = "red", cex = 1.3, pch = 16)
+```
+No son valores plausibles para las medias de las hembras, ya que las medias de los machos quedan fuera del intervalo de confianza, por lo que se esperaría que que las medias de las hembras lo compensarían. 
+
+
+b. Construir los intervalos simultáneos $T^2$ de 95 % para $\mu_1$ y $\mu_2$ y los intervalos de Bon-
+ferroni de 95 % de confianza para las mismas cantidades. Comparar los dos conjuntos
+de intervalos. ¿Qué ventaja, si la hay tienen los intervalos $T^2$ sobre los intervalos Bon-
+ferroni?
+
+Intervalos simultáneos $T^2$
+```{r}
+n <- nrow(X)
+p <- ncol(X)
+
+c1 <- p*(n-1)/(n-p)*qf(.05,p,n-p,lower.tail = F)
+for(i in 1:2)print(x_bar[i] + c(-1,1)*sqrt(c1*diag(S)[i]/n ))
+```
+Intervalos de Bonferroni 
+```{r}
+c3 <- qt(.05/(2*p), n-1, lower.tail = F)
+for(i in 1:2) print(x_bar[i] + c(-1,1)*c3*sqrt(diag(S)[i]/n))
+```
+Sabemos que los intervalos simultáneos son más anchos que los de Bonferroni para satisfacer la restricción de nivel de confianza 95% dado que toma en cuenta todas las dependencias entre las variables. Si deseamos intervalos más anchos, usaríamos los simultáneos. 
+
+
+c. Es la distribución normal bivariada un modelo poblacional viable? Explicar con refe-
+rencia a qq-plots y un diagrama de dispersión.
+
+```{r}
+
+par(mfrow = c(1,1), pty = "s")
+
+qqplot(rchisq(n,p),mahalanobis(X, center = x_bar, cov = S), ylab="d2")
+abline(a=0, b=1)
+
+pairs(X)
+```
+La parte superior del qq-plot se aleja significativamente de la línea recta, por lo que no consideraría que la distribución normal bivariada es un modelo viable. 
+
+
+## Ejercicio 6
+Consideren las 30 observaciones de cráneos de hombres egipcios para el primer periodo de
+tiempo:
+
+```{r}
+X <- read.delim("https://raw.githubusercontent.com/jvega68/EA3/master/datos/J&W/T6-13.DAT",
+                sep = "", header = F)
+names(X) <- c("MaxBreath", "BasHeight", "BasLength", "NasHeight", "TimePeriod")
+Y <- subset(X,TimePeriod==1)
+Y$TimePeriod <- NULL
+str(Y)
 
 ```
+a. Construir qq-plots de las distribuciones marginales para las cuatro variables. También
+construir la gráfica ji-cuadrada de las distribución multivariada. ¿Los datos se ven
+normales multivariados? Explicar.
+
+```{r}
+par(mfrow = c(2,2))
+for(i in 1:4) {
+  qqnorm(Y[,i],main = names(Y)[i])
+  qqline(Y[,i])
+}
+```
+```{r}
+n <- nrow(Y)
+p <- ncol(Y)
+
+par(mfrow = c(1,1), pty = "s")
+set.seed(1)
+qqplot(rchisq(n,p),mahalanobis(Y, center = colMeans(Y), cov = var(Y)),ylab="d2")
+abline(a=0, b=1)
+```
+Los datos parecen no desviarse tanto de la línea recta, por lo que podemos concluir que los datos se ven 
+normales multivariados. 
+
+b. Construir los intervalos de Bonferroni del 95% para cada una de las variables. También
+los simultáneos $T^2$ correspondientes y comparar.
+
+```{r}
+ybar <- colMeans(Y)
+S <- var(Y)
+
+# Bonferroni
+print("Intervalos de Bonferroni 95%")
+c3 <- qt(.05/(2*p), n-1, lower.tail = F)
+for(i in 1:4) {
+  print(ybar[i] + c(-1,1)*c3*sqrt(diag(S)[i]/n))
+}
+
+# Simultáneos T^2
+print("Intervalos simultáneos T^2 95%")
+c1 <- p*(n-1)/(n-p)*qf(.05,p,n-p,lower.tail = F)
+for(i in 1:4) {
+  print(ybar[i] + c(-1,1)*sqrt(c1*diag(S)[i]/n ))
+}
+```
+Nótese que los intervalos simultáneos son más anchos que los Bonferronizados porque toman en
+cuenta todas las posibles dependencias entre las variables, por lo que los de Bonferroni son más precisos.
+
+
+## Ejercicio 7
+```{r}
+X <- read.delim("https://raw.githubusercontent.com/jvega68/EA3/master/datos/J&W/T5-14.dat", 
+                sep = "", header = F)
+first30 <- head(X, 30)
+```
+
+
+```{r}
+# estimamos mu y S con 30 observaciones
+n <- nrow(X)
+p <- ncol(X)
+mu <- colMeans(first30)
+S <- var(first30)
+
+T2 <- n*mahalanobis(X, mu, S)
+plot(T2, type="l", main="Gráfica T^2 para los 50 autos", 
+     xlab="Número de auto", ylab="T^2")
+abline(h=qchisq(0.95, p), col="red")  # Límite crítico del 95%
+```
+
+
+
+```{r}
+# Obtener los autos con valores de T^2 por encima del límite crítico
+autos_preocupantes <- which(T2 > qchisq(0.95, p))
+
+```
+
+## Ejercicio 8
+```{r}
+# cargamos los datos
+X <- read.delim("https://raw.githubusercontent.com/jvega68/EA3/master/datos/J&W/T3-2.DAT", 
+                sep = "", header = F)
+```
+
+```{r}
+# Calcular la media y la matriz de covarianza
+media <- colMeans(X)
+S <- (var(X))
+
+# Realizar una transformación de los datos
+X_transformed <- t(solve(chol(cov_matrix)) %*% t(X))
+
+# Calcular la región de confianza del 95% para el vector de media
+n <- nrow(X)
+p <- ncol(X)
+alpha <- 0.05
+z_value <- qnorm(1 - alpha/2)
+conf_interval <- matrix(0, nrow = 2, ncol = 2)
+for (i in 1:p) {
+  lower_bound <- media[i] - z_value * sqrt(1/(n-1)) * sqrt(cov_matrix[i,i])
+  upper_bound <- media[i] + z_value * sqrt(1/(n-1)) * sqrt(cov_matrix[i,i])
+  conf_interval[i, ] <- c(lower_bound, upper_bound)
+}
+conf_interval
+```
+
+```{r}
+# Calcular los intervalos Bonferroni ajustados del 95%
+bonferroni_factor <- qt(1 - alpha/(2*p), df = n - 1)
+bonferroni_interval <- matrix(0, nrow = 2, ncol = 2)
+for (i in 1:p) {
+  lower_bound <- media[i] - bonferroni_factor * sqrt(1/(n-1)) * sqrt(cov_matrix[i,i])
+  upper_bound <- media[i] + bonferroni_factor * sqrt(1/(n-1)) * sqrt(cov_matrix[i,i])
+  bonferroni_interval[i, ] <- c(lower_bound, upper_bound)
+}
+bonferroni_interval
+
+```
+```{r}
+# método del laboratorio
+c1 <- p*(n-1)/(n-p)*qf(.05,p,n-p,lower.tail = F)
+for(i in 1:length(media))print(media[i] + c(-1,1)*sqrt(c1*diag(S)[i]/n ))
+```
+
+
+```{r}
+# bonferronizados (método del lab)
+c3 <- qt(.05/(2*p), n-1, lower.tail = F)
+for(i in 1:length(media)) print(media[i] + c(-1,1)*c3*sqrt(diag(S)[i]/n))
+```
+
