@@ -1,0 +1,203 @@
+---
+title: 'Métodos Multivariados: Tarea 3'
+author: "Aldo Carmona, Diego Arellano, Mateo De La Roche, Victor Contreras"
+published_date: "27/02/2024"
+format: pdf
+editor: visual
+output:
+  pdf_document: 
+    latex_engine: xelatex
+  html_document: default
+editor_options:
+  chunk_output_type: console
+---
+
+## Ejercicio 1
+
+1.  Si dos variables $X$ y $Y$ tienen covarianza $S = \begin{pmatrix} a & b \\ c & d \end{pmatrix}$, entonces mostrar que si $c \neq 0$ entonces la primera componente principal está dada por:
+
+$$
+\sqrt{\frac{c^2}{c^2 + (V_1 - d)^2}} X + \frac{c}{|c|} \sqrt{\frac{(V_i - d)^2}{c^2 + (V_1 - d)^2}} Y,
+$$
+
+donde $V_1$ es la varianza explicada por la primera componente principal. ¿Cuál es el valor de $V_1$?
+
+Consideremos la matriz de covarianza \(S\) para dos variables X y Y:
+
+$$
+S = \begin{pmatrix}
+a & b \\
+c & d
+\end{pmatrix}.
+$$
+
+calculamos los valores propios $\lambda$ resolviendo:
+
+$$
+\det(S - \lambda I) = 0.
+$$
+
+Desarrollando el determinante obtenemos:
+
+$$
+\begin{vmatrix}
+a - \lambda & b \\
+c & d - \lambda
+\end{vmatrix}
+= (a - \lambda)(d - \lambda) - bc = \lambda^2 - (a + d)\lambda + (ad - bc) = 0.
+$$
+
+Los vectores propios asociados a cada valor propio se encuentran resolviendo:
+
+$$
+(S - \lambda I) \vec{v} = 0.
+$$
+
+Entonces, tenemos el sistema:
+
+$$
+\begin{pmatrix}
+a - \lambda_1 & b \\
+c & d - \lambda_1
+\end{pmatrix}
+\begin{pmatrix}
+x \\
+y
+\end{pmatrix}
+= 0.
+$$
+
+Dado que $c \neq 0$, podemos expresar el vector propio correspondiente a $V_1$ como:
+
+$$
+\vec{v_1} = \left(\sqrt{\frac{c^2}{c^2 + (V_1 - d)^2}}, \frac{c}{|c|} \sqrt{\frac{(V_1 - d)^2}{c^2 + (V_1 - d)^2}}\right).
+$$
+
+La primera componente principal se construye entonces como una combinación lineal de \(X\) y \(Y\) utilizando los componentes de \(\vec{v_1}\):
+
+$$
+\text{PC1} = \vec{v_1}' \begin{pmatrix}
+X \\
+Y
+\end{pmatrix}
+= \sqrt{\frac{c^2}{c^2 + (V_1 - d)^2}} X + \frac{c}{|c|} \sqrt{\frac{(V_1 - d)^2}{c^2 + (V_1 - d)^2}} Y.
+$$
+
+El valor de \(V_1\) es, por tanto, el mayor valor propio calculado previamente.
+
+```
+
+## Ejercicio 2
+
+Considerar los datos en el archivo `T8-5.DAT` correspondientes a un tramo censal. Suponer que las observaciones en la variable $X_5 =$ valor de la mediana de hogares fue registrada en unidades de diez miles más que de cientos de miles de dólares (es decir, multipliquen todos los datos listados en la quinta columna por 10).
+
+### a. Comparación de estimaciones.
+
+Comparamos las estimaciones con los datos en diez miles y cientos de miles (son dos matrices de covarianzas) para las componentes principales en cada caso.
+
+### b. Interpretación de componentes
+
+Tratar de obtener la interpretación de las dos primeras componentes principales en cada caso.
+
+### c. Efectos en el cambio de escala.
+
+Describir cuáles son los efectos en el cambio de escala.
+
+```{r}
+1 + 1
+```
+
+## Ejercicio 3
+
+Considerar los datos sobre toros en el conjunto de datos T1 – 10.DAT sobre toros. Estos datos contienen las características medidas de 76 toros jóvenes (menores a dos años) vendidos en una subasta. Los datos que se incluyen corresponden a las siguientes variables:
+
+-   `Raza`: 1= Angus, 5= Hereford, 8= Simmental
+-   `PVenta`: precio de venta
+-   `YrHgt`: medición al hombro al año (pulgadas)
+-   `FtFreBody`: Cuerpo libre de grasa (libras)
+-   `PrctFFB`: Porcentaje del cuerpo libre de grasa
+-   `Frame`: Cornamenta. Escala de 1 (pequeña) a 8 (grande)
+-   `BkFat`: Grasa trasera (en pulgadas)
+-   `SaleHt`: medición al hombro en el momento de venta (pulgadas)
+-   `SaleWt`: peso de venta (libras)
+
+Utilizando las 7 últimas variables dadas, hacer un análisis de componentes principales usando la matriz de covarianzas de los datos y la matriz de correlación. El análisis debe incluir lo siguiente:
+
+### a. Número de componentes
+
+Determinar el número apropiado de componentes que resumen adecuadamente la variabilidad de los datos originales.
+
+### b. Interpretación de componentes
+
+Interpretación de las componentes principales.
+
+### c. Índice de tamaño de cuerpo
+
+¿Será posible desarrollar un índice 'Tamaño de cuerpo' o 'configuración de cuerpo' basado en las 7 variables consideradas? Expliquen.
+
+### d. Gráfica de componentes
+
+Hacer una gráfica de las dos primeras componentes. ¿Hay outliers? Si los hay, hacer una sustitución de la matriz de covarianzas con una matriz de covarianzas estimada de manera robusta.
+
+### e. Normalidad de datos originales
+
+Evalúen si los datos originales son normales. Si no lo son, buscar las transformaciones que los acerquen a normalidad. Repetir el análisis con los datos transformados y probar la significancia de la varianza de las componentes principales con el resultado de Anderson.
+
+```{r}
+1 + 1
+```
+
+## Ejercicio 4
+
+Consideren la matriz de correlaciones siguiente. Los datos originales corresponden a las mediciones de 8 variables de química sanguínea de 72 pacientes en un estudio clínico. (Jolliffe, 2002). La matriz de correlaciones de las variables rblood, plate, wblood, neut, lymph, bilir, sodium y potass, en ese orden, es la siguiente:
+
+```{r}
+ej4_corr <- c(
+  1.000, 0.290, -0.202, -0.055, -0.105, -0.252, -0.229,  0.058,
+  0.290, 1.000,  0.415,  0.285, -0.376, -0.349, -0.164, -0.129,
+ -0.202, 0.415,  1.000,  0.419, -0.521, -0.441, -0.145, -0.076,
+ -0.055, 0.285,  0.419,  1.000, -0.877, -0.076,  0.023, -0.131,
+ -0.105, -0.376, -0.521, -0.877,  1.000,  0.206,  0.034,  0.151,
+ -0.252, -0.349, -0.441, -0.076,  0.206,  1.000,  0.192,  0.077,
+ -0.229, -0.164, -0.145,  0.023,  0.034,  0.192,  1.000,  0.423,
+  0.058, -0.129, -0.076, -0.131,  0.151,  0.077,  0.423,  1.000
+)
+```
+
+y las desviaciones estándar, que tienen considerables diferencias, son:
+
+rblood plate wblood neut lymph bilir sodium potass
+
+```{r}
+ej4_desv <- c(0.371, 41.253, 1.935, 0.077, 0.071, 4.037, 2.732, 0.297)
+```
+
+### a. Componentes Pricipales
+
+Aplicar componentes principales a la matriz de covarianzas y a la matriz de correlaciones. Explicar las diferencias.
+
+### b. Interpretación para análisi
+
+Basado en la observación anterior, sobre qué debería hacerse el análisis?
+
+```{r}
+1 + 1
+```
+
+## Ejercicio 5
+
+Encontrar las componentes principales de la siguiente matriz de correlación calculada de las mediciones de 7 características físicas en 3,000 convictos criminales: Las variables son: 1. largo de la cabeza, 2. ancho de la cabeza, 3. ancho de la cara, 4. longitud del dedo pulgar izquierdo, 5. longitud del antebrazo izquierdo, 6. longitud del pie izquierdo, 7. Altura.
+
+$$
+\begin{bmatrix}
+1     &       &      &     &     &     &     \\
+0.402 & 1     &      &     &     &     &     \\
+0.396 & 0.618 & 1     &      &     &     &     \\
+0.301 & 0.150 & 0.321 & 1     &      &      &      \\
+0.305 & 0.135 & 0.289 & 0.846 & 1     &      &      \\
+0.339 & 0.206 & 0.365 & 0.759 & 0.797 & 1     &      \\
+0.340 & 0.183 & 0.345 & 0.661 & 0.800 & 0.736 & 1     \\
+\end{bmatrix}
+$$
+
+`{r} correlation_matrix <- matrix(c(   1,     0.402, 0.396, 0.301, 0.305, 0.339, 0.340,   0.402, 1,     0.618, 0.150, 0.135, 0.206, 0.183,   0.396, 0.618, 1,     0.321, 0.289, 0.365, 0.345,   0.301, 0.150, 0.321, 1,     0.846, 0.759, 0.661,   0.305, 0.135, 0.289, 0.846, 1,     0.797, 0.800,   0.339, 0.206, 0.365, 0.759, 0.797, 1,     0.736,   0.340, 0.183, 0.345, 0.661, 0.800, 0.736, 1 ), nrow = 7, byrow = TRUE)`
