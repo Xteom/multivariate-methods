@@ -22,7 +22,7 @@ $$
 
 donde $V_1$ es la varianza explicada por la primera componente principal. ¿Cuál es el valor de $V_1$?
 
-Consideremos la matriz de covarianza \(S\) para dos variables X y Y:
+Consideremos la matriz de covarianza (S) para dos variables X y Y:
 
 $$
 S = \begin{pmatrix}
@@ -50,7 +50,7 @@ $$
 Los vectores propios asociados a cada valor propio se encuentran resolviendo:
 
 $$
-(S - \lambda I) \vec{v} = 0.
+(S - \lambda I) \vec{v} = 0
 $$
 
 Entonces, tenemos el sistema:
@@ -73,19 +73,19 @@ $$
 \vec{v_1} = \left(\sqrt{\frac{c^2}{c^2 + (V_1 - d)^2}}, \frac{c}{|c|} \sqrt{\frac{(V_1 - d)^2}{c^2 + (V_1 - d)^2}}\right).
 $$
 
-La primera componente principal se construye entonces como una combinación lineal de \(X\) y \(Y\) utilizando los componentes de \(\vec{v_1}\):
+La primera componente principal se construye entonces como una combinación lineal de $X$ y $Y$ utilizando los componentes de $\vec{v_1}$:
 
 $$
-\text{PC1} = \vec{v_1}' \begin{pmatrix}
+\text{PC}_1 = \vec{v_1}' \begin{pmatrix}
 X \\
 Y
 \end{pmatrix}
 = \sqrt{\frac{c^2}{c^2 + (V_1 - d)^2}} X + \frac{c}{|c|} \sqrt{\frac{(V_1 - d)^2}{c^2 + (V_1 - d)^2}} Y.
 $$
 
-El valor de \(V_1\) es, por tanto, el mayor valor propio calculado previamente.
+El valor de $V_1$ es, por tanto, el mayor valor propio calculado previamente.
 
-```
+
 
 ## Ejercicio 2
 
@@ -200,4 +200,6 @@ $$
 \end{bmatrix}
 $$
 
-`{r} correlation_matrix <- matrix(c(   1,     0.402, 0.396, 0.301, 0.305, 0.339, 0.340,   0.402, 1,     0.618, 0.150, 0.135, 0.206, 0.183,   0.396, 0.618, 1,     0.321, 0.289, 0.365, 0.345,   0.301, 0.150, 0.321, 1,     0.846, 0.759, 0.661,   0.305, 0.135, 0.289, 0.846, 1,     0.797, 0.800,   0.339, 0.206, 0.365, 0.759, 0.797, 1,     0.736,   0.340, 0.183, 0.345, 0.661, 0.800, 0.736, 1 ), nrow = 7, byrow = TRUE)`
+```{r} 
+correlation_matrix <- matrix(c(   1,     0.402, 0.396, 0.301, 0.305, 0.339, 0.340,   0.402, 1,     0.618, 0.150, 0.135, 0.206, 0.183,   0.396, 0.618, 1,     0.321, 0.289, 0.365, 0.345,   0.301, 0.150, 0.321, 1,     0.846, 0.759, 0.661,   0.305, 0.135, 0.289, 0.846, 1,     0.797, 0.800,   0.339, 0.206, 0.365, 0.759, 0.797, 1,     0.736,   0.340, 0.183, 0.345, 0.661, 0.800, 0.736, 1 ), nrow = 7, byrow = TRUE)
+```
