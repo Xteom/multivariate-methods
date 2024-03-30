@@ -47,6 +47,8 @@ c & d - \lambda
 = (a - \lambda)(d - \lambda) - bc = \lambda^2 - (a + d)\lambda + (ad - bc) = 0.
 $$
 
+Donde los valores propios son $\lambda_1$ y $\lambda_2$
+
 Los vectores propios asociados a cada valor propio se encuentran resolviendo:
 
 $$
@@ -66,6 +68,101 @@ y
 \end{pmatrix}
 = 0.
 $$
+
+Obtenemos el determinante 
+$$
+\det(S - \lambda I) = (a - \lambda)(d - \lambda) - bc = 0,
+$$
+
+la cual es una ecuación cuadrática en términos de $\lambda$. Las soluciones de esta ecuación, $\lambda_1$ y $\lambda_2$, son los valores propios. Sabemos que $\lambda_1$ es el mayor valor propio, $V_1$, que es la varianza explicada por la primera componente principal.
+
+Calculamos el vector propio asociado, $\vec{v_1}$:
+
+$$
+\begin{pmatrix}
+a - V_1 & b \\
+c & d - V_1
+\end{pmatrix}
+\begin{pmatrix}
+x \\
+y
+\end{pmatrix}
+= \begin{pmatrix}
+0 \\
+0
+\end{pmatrix}.
+$$
+$$
+\begin{pmatrix}
+(a-V_1)x +by \\
+cx + (d-V_1)y
+\end{pmatrix}
+= \begin{pmatrix}
+0 \\
+0
+\end{pmatrix}.
+$$
+
+Tomando la segunda ecuación y dado que $c \neq 0$, podemos despejar $y$ en términos de $x$ utilizando la segunda ecuación:
+
+$$
+cx + (d - V_1)y = 0 \quad \Rightarrow \quad y = -\frac{c}{d - V_1}x.
+$$
+
+Normalizamos este vector para que su magnitud sea 1, es decir, que $\sqrt{x^2 + y^2} = 1$. Sustituyendo $y$ en términos de $x$, obtenemos la ecuación:
+
+$$
+x^2 + \left(-\frac{c}{d - V_1}x\right)^2 = 1.
+$$
+Despejando $x$:
+$$
+x^2 + \left(\frac{c}{d - V_1}\right)^2 x^2 = 1.
+$$
+
+
+$$
+x^2\left(1 + \left(\frac{c}{d - V_1}\right)^2\right) = 1,
+$$
+
+$$
+x = \sqrt{\frac{1}{1 + \frac{c^2}{(d - V_1)^2}}} = \sqrt{\frac{(d - V_1)^2}{c^2 + (d - V_1)^2}}.
+$$
+
+Sabemos que: 
+
+$$
+y= \frac{-c}{d-V_1}x
+$$
+Sustituyendo:
+
+$$
+y = \frac{-c}{\sqrt{{c^2 + (V_1 - d)^2}}} 
+$$
+---
+
+Resolviendo para $x$:
+
+$$
+x = \sqrt{\frac{c^2}{c^2 + (V_1 - d)^2}}.
+$$
+
+Y para $y$, teniendo en cuenta el signo de $c$, obtenemos:
+
+$$
+y = \frac{c}{|c|} \sqrt{\frac{(V_1 - d)^2}{c^2 + (V_1 - d)^2}}.
+$$
+
+Por lo tanto, el vector propio normalizado asociado a $V_1$ es:
+
+$$
+\vec{v_1} = \begin{pmatrix}
+\sqrt{\frac{c^2}{c^2 + (V_1 - d)^2}} \\
+\frac{c}{|c|} \sqrt{\frac{(V_1 - d)^2}{c^2 + (V_1 - d)^2}}
+\end{pmatrix}.
+$$
+
+Este vector propio normalizado nos da la dirección de la primera componente principal.
+
 
 Dado que $c \neq 0$, podemos expresar el vector propio correspondiente a $V_1$ como:
 
