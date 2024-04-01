@@ -1,5 +1,5 @@
 ---
-title: 'Métodos Multivariados: Tarea 3'
+title: 'Métodos Multivariados: Tarea 4'
 author: "Aldo Carmona, Diego Arellano, Mateo De La Roche, Victor Contreras"
 published_date: "27/02/2024"
 format: pdf
@@ -22,7 +22,7 @@ $$
 
 donde $V_1$ es la varianza explicada por la primera componente principal. ¿Cuál es el valor de $V_1$?
 
-Consideremos la matriz de covarianza (S) para dos variables X y Y:
+Consideremos la matriz de covarianza $S$ para dos variables $X$ y $Y$:
 
 $$
 S = \begin{pmatrix}
@@ -31,13 +31,13 @@ c & d
 \end{pmatrix}.
 $$
 
-calculamos los valores propios $\lambda$ resolviendo:
+Para encontrar los valores propios $\lambda$, resolvemos la ecuación característica:
 
 $$
 \det(S - \lambda I) = 0.
 $$
 
-Desarrollando el determinante obtenemos:
+Desarrollando el determinante, obtenemos:
 
 $$
 \begin{vmatrix}
@@ -47,36 +47,19 @@ c & d - \lambda
 = (a - \lambda)(d - \lambda) - bc = \lambda^2 - (a + d)\lambda + (ad - bc) = 0.
 $$
 
-Donde los valores propios son $\lambda_1$ y $\lambda_2$
-
-Los vectores propios asociados a cada valor propio se encuentran resolviendo:
+Las soluciones de esta ecuación cuadrática son los valores propios $\lambda_1$ y $\lambda_2$, que se calculan como:
 
 $$
-(S - \lambda I) \vec{v} = 0
+\lambda_{1,2} = \frac{1}{2} \left(a + d \pm \sqrt{(a - d)^2 + 4bc}\right).
 $$
 
-Entonces, tenemos el sistema:
+Dado que $V_1$ es el mayor valor propio, se corresponde con:
 
 $$
-\begin{pmatrix}
-a - \lambda_1 & b \\
-c & d - \lambda_1
-\end{pmatrix}
-\begin{pmatrix}
-x \\
-y
-\end{pmatrix}
-= 0.
+V_1 = \frac{1}{2} \left(a + d + \sqrt{(a - d)^2 + 4bc}\right).
 $$
 
-Obtenemos el determinante 
-$$
-\det(S - \lambda I) = (a - \lambda)(d - \lambda) - bc = 0,
-$$
-
-la cual es una ecuación cuadrática en términos de $\lambda$. Las soluciones de esta ecuación, $\lambda_1$ y $\lambda_2$, son los valores propios. Sabemos que $\lambda_1$ es el mayor valor propio, $V_1$, que es la varianza explicada por la primera componente principal.
-
-Calculamos el vector propio asociado, $\vec{v_1}$:
+Ahora, para encontrar el vector propio asociado a $V_1$, resolvemos $(S - V_1 I) \vec{v} = 0$. Suponiendo que el vector propio es $\vec{v} = (x, y)^T$, tenemos:
 
 $$
 \begin{pmatrix}
@@ -92,117 +75,113 @@ y
 0
 \end{pmatrix}.
 $$
-$$
-\begin{pmatrix}
-(a-V_1)x +by \\
-cx + (d-V_1)y
-\end{pmatrix}
-= \begin{pmatrix}
-0 \\
-0
-\end{pmatrix}.
-$$
 
-Tomando la segunda ecuación y dado que $c \neq 0$, podemos despejar $y$ en términos de $x$ utilizando la segunda ecuación:
+Dado $c \neq 0$, podemos expresar $y$ en términos de $x$:
 
 $$
 cx + (d - V_1)y = 0 \quad \Rightarrow \quad y = -\frac{c}{d - V_1}x.
 $$
 
-Normalizamos este vector para que su magnitud sea 1, es decir, que $\sqrt{x^2 + y^2} = 1$. Sustituyendo $y$ en términos de $x$, obtenemos la ecuación:
+Para que el vector propio tenga longitud unitaria, $x^2 + y^2 = 1$, sustituimos $y$ en términos de $x$:
 
 $$
 x^2 + \left(-\frac{c}{d - V_1}x\right)^2 = 1.
 $$
-Despejando $x$:
-$$
-x^2 + \left(\frac{c}{d - V_1}\right)^2 x^2 = 1.
-$$
 
+Resolviendo para $x$, obtenemos:
 
 $$
-x^2\left(1 + \left(\frac{c}{d - V_1}\right)^2\right) = 1,
+x = \sqrt{\frac{1}{1 + \left(\frac{c}{d - V_1}\right)^2}} = \sqrt{\frac{(d - V_1)^2}{c^2 + (d - V_1)^2}}.
 $$
 
-$$
-x = \sqrt{\frac{1}{1 + \frac{c^2}{(d - V_1)^2}}} = \sqrt{\frac{(d - V_1)^2}{c^2 + (d - V_1)^2}}.
-$$
-
-Sabemos que: 
+Y para $y$, usando la relación $y = -\frac{c}{d - V_1}x$, obtenemos:
 
 $$
-y= \frac{-c}{d-V_1}x
-$$
-Sustituyendo:
-
-$$
-y = \frac{-c}{\sqrt{{c^2 + (V_1 - d)^2}}} 
-$$
----
-
-Resolviendo para $x$:
-
-$$
-x = \sqrt{\frac{c^2}{c^2 + (V_1 - d)^2}}.
+y = \frac{c}{\sqrt{c^2 + (V_1 - d)^2}}.
 $$
 
-Y para $y$, teniendo en cuenta el signo de $c$, obtenemos:
+Así, la primera componente principal está dada por:
 
 $$
-y = \frac{c}{|c|} \sqrt{\frac{(V_1 - d)^2}{c^2 + (V_1 - d)^2}}.
+\sqrt{\frac{c^2}{c^2 + (V_1 - d)^2}} X + \frac{c}{|c|} \sqrt{\frac{(V_1 - d)^2}{c^2 + (V_1 - d)^2}} Y,
 $$
 
-Por lo tanto, el vector propio normalizado asociado a $V_1$ es:
-
-$$
-\vec{v_1} = \begin{pmatrix}
-\sqrt{\frac{c^2}{c^2 + (V_1 - d)^2}} \\
-\frac{c}{|c|} \sqrt{\frac{(V_1 - d)^2}{c^2 + (V_1 - d)^2}}
-\end{pmatrix}.
-$$
-
-Este vector propio normalizado nos da la dirección de la primera componente principal.
-
-
-Dado que $c \neq 0$, podemos expresar el vector propio correspondiente a $V_1$ como:
-
-$$
-\vec{v_1} = \left(\sqrt{\frac{c^2}{c^2 + (V_1 - d)^2}}, \frac{c}{|c|} \sqrt{\frac{(V_1 - d)^2}{c^2 + (V_1 - d)^2}}\right).
-$$
-
-La primera componente principal se construye entonces como una combinación lineal de $X$ y $Y$ utilizando los componentes de $\vec{v_1}$:
-
-$$
-\text{PC}_1 = \vec{v_1}' \begin{pmatrix}
-X \\
-Y
-\end{pmatrix}
-= \sqrt{\frac{c^2}{c^2 + (V_1 - d)^2}} X + \frac{c}{|c|} \sqrt{\frac{(V_1 - d)^2}{c^2 + (V_1 - d)^2}} Y.
-$$
-
-El valor de $V_1$ es, por tanto, el mayor valor propio calculado previamente.
-
-
+donde $V_1$ es la varianza explicada por la primera componente principal.
 
 ## Ejercicio 2
 
 Considerar los datos en el archivo `T8-5.DAT` correspondientes a un tramo censal. Suponer que las observaciones en la variable $X_5 =$ valor de la mediana de hogares fue registrada en unidades de diez miles más que de cientos de miles de dólares (es decir, multipliquen todos los datos listados en la quinta columna por 10).
 
+```{r}
+data_ej2 <- read.table("T8-5.DAT", header = TRUE)
+data_ej2_adj <- data_ej2
+data_ej2_adj[, 5] <- data_ej2_adj[, 5] * 10
+```
+
 ### a. Comparación de estimaciones.
 
 Comparamos las estimaciones con los datos en diez miles y cientos de miles (son dos matrices de covarianzas) para las componentes principales en cada caso.
 
-### b. Interpretación de componentes
+```{r}
+# covarianzas 
+cov_data_ej2 <- cov(data_ej2)
+cov_data_ej2_adj <- cov(data_ej2_adj)
 
-Tratar de obtener la interpretación de las dos primeras componentes principales en cada caso.
+# pca
+# scale = FALSE porque nos interesa ver como cambian al ser unidades diferentes
+pc_dataej2 <- prcomp(data_ej2, scale = FALSE)
+pc_dataej2_adj <- prcomp(data_ej2_adj, scale = FALSE)
+```
+
+Matriz de covarianza (datos sin ajustar)
+
+```{r, echo=FALSE}
+cov_data_ej2
+```
+
+
+Matriz de covarianza (datos ajustados)
+```{r, echo=FALSE}
+cov_data_ej2_adj
+```
+
+Componentes principales (datos sin ajustar)
+```{r}
+summary(pc_dataej2)
+
+```
+
+Componentes principales (datos ajustados)
+```{r}
+summary(pc_dataej2_adj)
+```
+
+
+### b. Interpretación de componentes
+Con los datos no ajustados la primera componente principal nos indica el negativo de $X_4$ y la segunda nos indica el negativo de $X_3$
+```{r}
+pc_dataej2$rotation
+```
+
+Con los datos ajustados, la primera componente principal nos indica $X_4$ y la segunda compente princial nos indica $X_3$ y ahora también tiene también una fuerte componente de $X_5$
+
+```{r}
+pc_dataej2_adj$rotation
+```
 
 ### c. Efectos en el cambio de escala.
 
-Describir cuáles son los efectos en el cambio de escala.
+Podemos ver como los efectos de la variable $X_5$ en verdad erán más importantes, sin embargo como no estaba bien reescalada, el primer análisis de ocmponentes principales, no lo tomó en cuenta.
+
+### Extra (utilizando Scale = True)
 
 ```{r}
-1 + 1
+pc_dataej2_extra <- prcomp(data_ej2, scale = TRUE)
+pc_dataej2_extra$rotation
+
 ```
+
+Al estandarizar las variables vemos como todas las cargas de las variables en las componentes principales cambian por completo.
 
 ## Ejercicio 3
 
@@ -222,28 +201,123 @@ Utilizando las 7 últimas variables dadas, hacer un análisis de componentes pri
 
 ### a. Número de componentes
 
-Determinar el número apropiado de componentes que resumen adecuadamente la variabilidad de los datos originales.
+Para determinar el número de componentes apropiadas utilizamos un Scree plot
+```{r}
+dataej3 <- read.table("T1-10.DAT", header=TRUE)
+colnames(dataej3) <- c("Raza", "PVenta", "YrHgt", "FtFreBody", "PrctFFB", 
+                       "Frame", "BkFat", "SaleHt", "SaleWt")
+
+#quitamos datos categóricos 
+dataej3_pca <- dataej3[, c("PVenta", "YrHgt", "FtFreBody", "PrctFFB", 
+                           "Frame", "BkFat", "SaleHt", "SaleWt")]
+
+
+pca_dataej3 <- prcomp(dataej3_pca, scale = TRUE)
+summary(pca_dataej3)
+#plot(pca_dataej3, type = "l") 
+
+library(factoextra)
+fviz_screeplot(pca_dataej3,ncp=11)
+
+```
+
+Parece ser que con tres componentes tenemos una buena explicabilidad de la varianza.
 
 ### b. Interpretación de componentes
 
 Interpretación de las componentes principales.
+```{r}
+pca_dataej3$rotation[, c("PC1", "PC2", "PC3")]
+```
+La primera componente principal nos indica que tan corta es la distancia al hombro en el momento de la venta, que tan chica es la cornamenta y que tan pequeña fue la medición al hombro luego de un año. Es decir que mientras mayor sea la primera componente principal de un toro, menor serán esas tres características. 
+
+La segunda componente principal, nos indica el el precio de venta del toro, la cantidad de grasa trasera y el negativo el porcentaje del cuerpo libre de grasa. Mientras mayor sea esta componente, más caro se vendió el toro, mayor grasa trasera tenía y menos porcentaje del cuerpo libre de grasa tenía. 
+
+La tercera componente principal nos indica el peso de venta y el cuerpo libre de grasa. 
 
 ### c. Índice de tamaño de cuerpo
 
-¿Será posible desarrollar un índice 'Tamaño de cuerpo' o 'configuración de cuerpo' basado en las 7 variables consideradas? Expliquen.
+¿Será posible desarrollar un índice 'Tamaño de cuerpo' o 'configuración de cuerpo' basado en las 7 variables consideradas?
+
+El negativo de la primera componente principal pararece servir como ese indice, ya que las cargas de las variables del tamaño del cuerpo del toro son las más altas.
 
 ### d. Gráfica de componentes
 
 Hacer una gráfica de las dos primeras componentes. ¿Hay outliers? Si los hay, hacer una sustitución de la matriz de covarianzas con una matriz de covarianzas estimada de manera robusta.
+
+```{r}
+fviz_pca_biplot(pca_dataej3,repel = T,geom.ind = "point")
+
+```
 
 ### e. Normalidad de datos originales
 
 Evalúen si los datos originales son normales. Si no lo son, buscar las transformaciones que los acerquen a normalidad. Repetir el análisis con los datos transformados y probar la significancia de la varianza de las componentes principales con el resultado de Anderson.
 
 ```{r}
-1 + 1
+apply(dataej3_pca, 2, shapiro.test)
 ```
 
+podemos ver que las columnas Pventa, FtFreBody (a pesar de tener una W alta, tenemos un p value bajo lo que indica que es poco probale que sean normales), Frame y BkFat no siguen distribución normal. 
+
+```{r, echo=FALSE}
+# Asegúrate de tener tu dataframe dataej3_pca listo
+par(mfrow=c(2,2)) # layout del plot en 2 filas y 2 columnas
+
+# Histograma para PVenta
+hist(dataej3_pca$PVenta, main="Histograma de PVenta", xlab="PVenta", col="skyblue", border="black")
+
+# Histograma para FtFreBody
+hist(dataej3_pca$FtFreBody, main="Histograma de FtFreBody", xlab="FtFreBody", col="skyblue", border="black")
+
+# Histograma para Frame
+hist(dataej3_pca$Frame, main="Histograma de Frame", xlab="Frame", col="skyblue", border="black")
+
+# Histograma para BkFat
+hist(dataej3_pca$BkFat, main="Histograma de BkFat", xlab="BkFat", col="skyblue", border="black")
+
+# Restablecer las configuraciones gráficas por defecto
+par(mfrow=c(1,1))
+```
+
+```{r}
+dataej3_pca$PVenta_log <- log(dataej3_pca$PVenta)
+dataej3_pca$FtFreBody_log <- log(dataej3_pca$FtFreBody)
+
+dataej3_pca$BkFat_sqrt <- sqrt(dataej3_pca$BkFat)
+dataej3_pca$Frame_sqrt <- sqrt(dataej3_pca$Frame) # 
+
+apply(dataej3_pca[, c("PVenta_log", "FtFreBody_log", "BkFat_sqrt", "Frame_sqrt")]
+      , 2, shapiro.test)
+```
+
+
+```{r, echo=FALSE}
+par(mfrow=c(2,2)) #  layout del plot en 2 filas y 2 columnas
+
+# Histograma para PVenta
+hist(dataej3_pca$PVenta_log, main="Histograma de PVenta_log", xlab="PVenta_log", col="skyblue", border="black")
+
+# Histograma para FtFreBody
+hist(dataej3_pca$FtFreBody_log, main="Histograma de FtFreBody_log", xlab="FtFreBody_log", col="skyblue", border="black")
+
+# Histograma para Frame
+hist(dataej3_pca$Frame_sqrt, main="Histograma de Frame_sqrt", xlab="Frame_sqrt", col="skyblue", border="black")
+
+# Histograma para BkFat
+hist(dataej3_pca$BkFat_sqrt, main="Histograma de BkFat_sqrt", xlab="BkFat_sqrt", col="skyblue", border="black")
+
+# Restablecer las configuraciones gráficas por defecto
+par(mfrow=c(1,1))
+
+
+# transformación boxcox pa después
+#library(MASS)
+#dataej3_pca$PVenta_bc <- boxcox(dataej3_pca$PVenta, lambda = seq(-2, 2, by = 0.1))
+
+```
+
+ 
 ## Ejercicio 4
 
 Consideren la matriz de correlaciones siguiente. Los datos originales corresponden a las mediciones de 8 variables de química sanguínea de 72 pacientes en un estudio clínico. (Jolliffe, 2002). La matriz de correlaciones de las variables rblood, plate, wblood, neut, lymph, bilir, sodium y potass, en ese orden, es la siguiente:
@@ -269,17 +343,39 @@ rblood plate wblood neut lymph bilir sodium potass
 ej4_desv <- c(0.371, 41.253, 1.935, 0.077, 0.071, 4.037, 2.732, 0.297)
 ```
 
+```{r}
+# reconstruimos la matriz de correlaciones
+ej4_corr_matrix <- matrix(ej4_corr, nrow = 8, ncol = 8)
+# Calculamos la matriz de covarianzas 
+ej4_cov_matrix <- ej4_corr_matrix * (ej4_desv %*% t(ej4_desv))
+```
+
 ### a. Componentes Pricipales
+```{r}
+# PCA usando la matriz de correlaciones
+ej4_pca_cor <- prcomp(ej4_corr_matrix, scale = TRUE)
+summary(ej4_pca_cor)
+
+# PCA usando la matriz de covarianzas
+ej4_pca_cov <- prcomp(ej4_cov_matrix, scale = FALSE)
+summary(ej4_pca_cov)
+```
 
 Aplicar componentes principales a la matriz de covarianzas y a la matriz de correlaciones. Explicar las diferencias.
 
-### b. Interpretación para análisi
+Para el PCA basado en la matriz de correlaciones, vemos que:
+
+PC1 explica el 54.31% de la varianza.
+PC2 explica el 20.32% de la varianza.
+Sumando hasta la tercera componente principal, explican el 87.02% de la varianza.
+Para el PCA basado en la matriz de covarianzas, el primer componente principal explica prácticamente toda la varianza (99.99%)
+
+### b. Interpretación para análisis
 
 Basado en la observación anterior, sobre qué debería hacerse el análisis?
 
-```{r}
-1 + 1
-```
+Podemos ver que es mejor hacer el pca con la matriz de correlaciones ya que la varianza no se encuentra tan cargada en la primer componente principal como pasa con la matriz de covarianzas. Al usar la matriz de correlaciones permitimos que cada variable aporte de forma significativa al análisis. No dejamos que una sola variable de gran varianza a escala domine todo el análisis.
+
 
 ## Ejercicio 5
 
@@ -297,6 +393,22 @@ $$
 \end{bmatrix}
 $$
 
-```{r} 
-correlation_matrix <- matrix(c(   1,     0.402, 0.396, 0.301, 0.305, 0.339, 0.340,   0.402, 1,     0.618, 0.150, 0.135, 0.206, 0.183,   0.396, 0.618, 1,     0.321, 0.289, 0.365, 0.345,   0.301, 0.150, 0.321, 1,     0.846, 0.759, 0.661,   0.305, 0.135, 0.289, 0.846, 1,     0.797, 0.800,   0.339, 0.206, 0.365, 0.759, 0.797, 1,     0.736,   0.340, 0.183, 0.345, 0.661, 0.800, 0.736, 1 ), nrow = 7, byrow = TRUE)
+```{r, echo=FALSE}
+ej5_corr_matrix <- matrix(c(   1,     0.402, 0.396, 0.301, 0.305, 0.339, 0.340,   0.402, 1,     0.618, 0.150, 0.135, 0.206, 0.183,   0.396, 0.618, 1,     0.321, 0.289, 0.365, 0.345,   0.301, 0.150, 0.321, 1,     0.846, 0.759, 0.661,   0.305, 0.135, 0.289, 0.846, 1,     0.797, 0.800,   0.339, 0.206, 0.365, 0.759, 0.797, 1,     0.736,   0.340, 0.183, 0.345, 0.661, 0.800, 0.736, 1 ), nrow = 7, byrow = TRUE)
 ```
+
+```{r}
+var_names <-  c("LargoCabeza", "AnchoCabeza", "AnchoCara", "LongPulgarIzq", 
+                "LongAntebrazoIzq", "LongPieIzq", "Altura")
+
+rownames(ej5_corr_matrix) <- var_names
+colnames(ej5_corr_matrix) <- var_names
+# Realizar PCA
+ej5_pca <- prcomp(ej5_corr_matrix)
+
+summary(ej5_pca)
+
+# cargas
+ej5_pca$rotation
+```
+
