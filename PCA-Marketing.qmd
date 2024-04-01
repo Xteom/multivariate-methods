@@ -1,0 +1,150 @@
+---
+title: 'Lab7: Ejemplos PCA MArketing'
+lang: es
+author: "Jorge de la Vega"
+date: "05 03 2024"
+format: 
+  html:
+    page-layout: full
+    html-math-method: katex
+    embed-resources: true
+editor_options: 
+  chunk_output_type: console
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Análisis de datos de mercadotecnia usando componentes principales.
+
+La siguiente nota replica el ejercicio publicado en el [blog mb](http://mbenhaddou.com/2019/02/22/marketing-data-analysis-using-pca/) y que presenta algunos errores de codificación. El ejercicio utiliza los datos que pueden ser obtenidos de la siguiente [liga](https://github.com/mbenhaddou/MarketingAnalytics/tree/master/data). De acuerdo al blog, los datos corresponden a una marca desconocida de una categoría desconocida. Contiene datos de ventas  en términos de participación de mercado, variables de tiendas, algunas variables de competencia y prinicipalmente datos de actividad publicitaria.
+
+Ustedes pueden leer con detalle el blog (incluso recomiendo que lo bajen, así como los datos por si la liga desaparece eventualmente). A continuación copiaré tal cual del blog la descripción de los conjuntos de datos.
+
+## Detalles de los datos.
+
+**Definition:** Private label products are those manufactured by one company for sale under store own brands name sometime also known as white labels.
+
+**GRP:** Le GRP is an indicator of the advertising pressure of a given media. It corresponds to the average number of advertising contacts obtained on 100 individuals of the targeted target.
+
+**Reach:** refers to the total number of different people or households exposed, at least once, to a medium during a given period.
+
+
+Here is a description of the fields in the data set:
+
+- `week`: the week number
+- `Year`: the data span approximately 3 years from mi 2010 to mid 2013  
+- `Market.Share`: the category market share of the product             
+- `Av.Price.per.kg`: average price of 1 kilogram of the product         
+- `Non.Promo.Price.per.kg`: Non promotional price of the product
+- `Promo.Vol.Share`: ratio of the promotion to. Normal sales       
+- `Total.Weigh`: total weight of the product sold              
+- `Share.of.Ean.Weigh`: No definida!!!     
+- `Avg.price.vs.PLB`: Ratio of price versus the store private brand in the same category.
+- `Non.promo.price.vs.PLB`: average non promotion  price ration to the private label brand 
+- `Promo.vol.sh.index.vs.PLB`: ratio promotion volume to the private label brand
+- `Total.cm.shelf`: Total of linear space taken by the product in centimeters         
+- `Shelf.share`: share of the total shelf taken by the category              
+- `Top.of.mind`: ratio interview that cited the brand top of mind. (this is an answer to the question: can you cite some brands in the category X)              
+- `Spontaneous`: ratio of interviewees spontaneously citing the brand              
+- `Aided`: ratio of the interviewees that recognized the brand by their logo
+- `Penetration`: ratio of the household that bought at least once the brand in the year.
+- `Competitor`: one competitor market share. This is a competitor brand that is of interest in the analysis.               
+- `GRP.radio`: GRP of the radio in a given week.                
+- `Reach.radio`: Reach of the radio advertising in a given week.            
+- `GRP.TV`: GRP of TV advertising                 
+- `Reach.TV`:  reach of TV advertising               
+- `Reach.cinema`:   Reach of Cinema advertising             
+- `GRP.outdoor`:   GRP of outdoor advertising       
+- `GRP.print`:      GRP of Print advertising      
+- `Share.of.spend`:  share of the marketing budget in these activities in the given week.
+
+Son un total de 26 variables disponibles, y hay 156 observaciones. El autor del artículo tiene preferencias por los paquetes de Tidyverse. Así que es interesante ver el uso de otras funciones. 
+
+```{r}
+library(tidyverse)
+library(readr) # esta es uno de los paquetes para leer archivos csv
+archivo <- "https://raw.githubusercontent.com/mbenhaddou/MarketingAnalytics/master/data/data.csv"
+  data <- read_csv(archivo)
+head(data) # muestra los datos cargados
+```
+
+Una cosa importante a notar es que algunas de las variables tienen una gran cantidad de datos faltantes. Por ejemplo, la variable `GRP.outdoor`, ¡sólo tiene un dato! Esto no lo comenta el autor del artículo. Por lo tanto, yo excluiré esa variable. Podemos definir un criterio y puede ser dejar fuera todas las variables que tengan más del 50% de observaciones faltantes. Por ejemplo:
+
+- GPR.radio
+- Reach.radio
+- GRP.TV
+- Reach.TV
+- Reach.cinema
+- GRP.outdoor
+- GRP.print
+
+```{r}
+summary(data)
+# Quitamos las variables (usando el signo menos)
+datos <- data %>% 
+         select(-GRP.radio,-Reach.radio,-GRP.TV,-Reach.TV,
+                -Reach.cinema,-GRP.outdoor,-GRP.print)
+```
+
+
+Lo primero que hace el autor es analizar qué variables pueden estar altamente correlacionadas para evitar posibles redundancias en los datos. No es algo que sea necesario hacer. El autor hace este análisis de una manera curiosa, yo trataré de hacerlo de una manera mucho más visual:
+
+```{r}
+library(corrplot) # paquete que permite visualizar correlaciones de los datos
+R <- cor(datos, use = "pairwise.complete.obs") # Calculo la matriz de correlaciones.
+corrplot(R, type = "upper", method = "ellipse",tl.cex = 0.9)
+```
+
+En la gráfica anterior, vemos que en realidad no hay variables que estén altamente correlacionadas, una vez que se quitan las variables que tienen muy pocas observaciones. Noten que hay varias maneras de calcular la correlación de los datos, puede ser considerando sólo las observaciones que tienen datos completos, o por pares de variables que tienen datos completos, que es como lo hice.
+
+lo que hace el autor del blog después es quitar la variable año que no será parte del análisis, sino es sólo una variable agrupadora. En este punto yo estoy usando un conjunto de datos diferente al del autor por los criterios de eliminación de variables
+
+```{r}
+marketing.data <- datos %>% 
+                  select(-Year)
+```
+
+## Cálculo de las componentes principales.
+
+Ahora obtenemos las componentes principales. El autor usa la función `prcomp`, que es similar a la función que nosotros usamos, pero que requiere de otros parámetros. Ambas son equivalentes. Para complementar lo que vimos en clase, usaré el mismo método que el autor. A diferencia de él, a nosotros nos queda una matriz de 18 columnas (en lugar de 21) y con las 156 observaciones. Pero el problema es que **no se pueden correr componentes principales con datos faltantes**. Eso no lo comenta el autor del artículo.
+
+```{r}
+# nos quedamos con los datos completos
+md <- marketing.data[complete.cases(marketing.data),]
+# los parámetros center y scale sirven para decir que queremos que los 
+# datos se estandaricen
+marketing.pca <- prcomp(md, center = T, scale = T)
+summary(marketing.pca)
+```
+
+Se ve el screeplot:
+
+```{r}
+library(factoextra)
+fviz_screeplot(marketing.pca,ncp=10)
+```
+
+## Gráficando las componentes principales
+
+El autor llama una función curiosa, pero yo lo voy a hacer con las herramientas que ya tenemos
+
+```{r}
+fviz_pca_biplot(marketing.pca,repel = T,geom.ind = "point")
+```
+
+Las variables que más contribuyen a la primera componente principal en este ejercicio son: `Shelf.share`, `Av.Price.per.kg`, `Competition`, `Avg price.vs.PLB` y `Total.cm.shelf`. El autor hace la referencia visual, pero nosotros podemos interpretar directamente de los pesos obtenidos para las componentes. En la función `prcomp`, en lugar de llamarle "loads" a los pesos, les llama "rotation" a la matriz de pesos obtenidos.
+
+```{r}
+marketing.pca$rotation
+```
+
+Por último, hace una gráfica para ver la segmentación que hacen las componentes principales de las variables
+
+```{r}
+fviz_pca_biplot(marketing.pca,
+                habillage = datos$Year[complete.cases(marketing.data)],
+                addEllipses = T)
+```
+
+Lo que encontró el autor es que los años están segmentados juntos. Esto puede ayudar a interpretar qué variables fueron importantes por cada uno de los años. ¿Pueden interpretar?
