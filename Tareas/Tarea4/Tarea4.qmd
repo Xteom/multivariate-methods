@@ -239,7 +239,7 @@ La tercera componente principal nos indica el peso de venta y el cuerpo libre de
 
 ¿Será posible desarrollar un índice 'Tamaño de cuerpo' o 'configuración de cuerpo' basado en las 7 variables consideradas?
 
-El negativo de la primera componente principal pararece servir como ese indice, ya que las cargas de las variables del tamaño del cuerpo del toro son las más altas.
+El negativo de la primera componente principal parece servir como ese indice, ya que las cargas de las variables del tamaño del cuerpo del toro son las más altas.
 
 ### d. Gráfica de componentes
 
@@ -281,31 +281,49 @@ par(mfrow=c(1,1))
 ```
 
 ```{r}
-dataej3_pca$PVenta_log <- log(dataej3_pca$PVenta)
-dataej3_pca$FtFreBody_log <- log(dataej3_pca$FtFreBody)
 
-dataej3_pca$BkFat_sqrt <- sqrt(dataej3_pca$BkFat)
-dataej3_pca$Frame_sqrt <- sqrt(dataej3_pca$Frame) # 
+library(MASS)
 
-apply(dataej3_pca[, c("PVenta_log", "FtFreBody_log", "BkFat_sqrt", "Frame_sqrt")]
-      , 2, shapiro.test)
+# PVenta
+bc_result_PVenta <- boxcox(dataej3_pca$PVenta ~ 1, plotit = FALSE)
+lambda_optimo_PVenta <- bc_result_PVenta$x[which.max(bc_result_PVenta$y)]
+dataej3_pca$PVenta_bc <- 
+  (dataej3_pca$PVenta^lambda_optimo_PVenta - 1) / lambda_optimo_PVenta
+
+# FtFreBody
+bc_result_FtFreBody <- boxcox(dataej3_pca$FtFreBody ~ 1, plotit = FALSE)
+lambda_optimo_FtFreBody <- bc_result_FtFreBody$x[which.max(bc_result_FtFreBody$y)]
+dataej3_pca$FtFreBody_bc <- 
+  (dataej3_pca$FtFreBody^lambda_optimo_FtFreBody - 1) / lambda_optimo_FtFreBody
+
+# Frame
+dataej3_pca$Frame_adj <- dataej3_pca$Frame + (min(dataej3_pca$Frame, 0)) + 1
+bc_result_Frame <- boxcox(dataej3_pca$Frame_adj ~ 1, plotit = FALSE)
+lambda_optimo_Frame <- bc_result_Frame$x[which.max(bc_result_Frame$y)]
+dataej3_pca$Frame_bc <- 
+  (dataej3_pca$Frame_adj^lambda_optimo_Frame - 1) / lambda_optimo_Frame
+
+#  BkFat
+dataej3_pca$BkFat_adj <- dataej3_pca$BkFat + (min(dataej3_pca$BkFat, 0)) + 1
+bc_result_BkFat <- boxcox(dataej3_pca$BkFat_adj ~ 1, plotit = FALSE)
+lambda_optimo_BkFat <- bc_result_BkFat$x[which.max(bc_result_BkFat$y)]
+dataej3_pca$BkFat_bc <- 
+  (dataej3_pca$BkFat_adj^lambda_optimo_BkFat - 1) / lambda_optimo_BkFat
+
+
 ```
 
 
 ```{r, echo=FALSE}
 par(mfrow=c(2,2)) #  layout del plot en 2 filas y 2 columnas
 
-# Histograma para PVenta
-hist(dataej3_pca$PVenta_log, main="Histograma de PVenta_log", xlab="PVenta_log", col="skyblue", border="black")
+hist(dataej3_pca$PVenta_bc, main="PVenta Box-Cox", xlab="Transformed", col="skyblue")
 
-# Histograma para FtFreBody
-hist(dataej3_pca$FtFreBody_log, main="Histograma de FtFreBody_log", xlab="FtFreBody_log", col="skyblue", border="black")
+hist(dataej3_pca$FtFreBody_bc, main="FtFreBody Box-Cox", xlab="Transformed", col="skyblue")
 
-# Histograma para Frame
-hist(dataej3_pca$Frame_sqrt, main="Histograma de Frame_sqrt", xlab="Frame_sqrt", col="skyblue", border="black")
+hist(dataej3_pca$Frame_bc, main="Frame Box-Cox", xlab="Transformed", col="skyblue")
 
-# Histograma para BkFat
-hist(dataej3_pca$BkFat_sqrt, main="Histograma de BkFat_sqrt", xlab="BkFat_sqrt", col="skyblue", border="black")
+hist(dataej3_pca$BkFat_bc, main="BkFat Box-Cox", xlab="Transformed", col="skyblue")
 
 # Restablecer las configuraciones gráficas por defecto
 par(mfrow=c(1,1))
@@ -316,6 +334,39 @@ par(mfrow=c(1,1))
 #dataej3_pca$PVenta_bc <- boxcox(dataej3_pca$PVenta, lambda = seq(-2, 2, by = 0.1))
 
 ```
+
+```{r}
+lapply(dataej3_pca[, c("PVenta_bc", "FtFreBody_bc", "Frame_bc", "BkFat_bc")], 
+       shapiro.test)
+```
+
+```{r}
+library(nortest)
+ad.test(dataej3_pca$PVenta_bc)
+ad.test(dataej3_pca$FtFreBody_bc)
+ad.test(dataej3_pca$Frame_bc)
+ad.test(dataej3_pca$BkFat_bc)
+```
+
+```{r}
+# QQ plot para PVenta_bc
+qqnorm(dataej3_pca$PVenta_bc, main="QQ Plot para PVenta_bc")
+qqline(dataej3_pca$PVenta_bc, col="red")
+
+# QQ plot para FtFreBody_bc
+qqnorm(dataej3_pca$FtFreBody_bc, main="QQ Plot para FtFreBody_bc")
+qqline(dataej3_pca$FtFreBody_bc, col="red")
+
+# QQ plot para Frame_bc
+qqnorm(dataej3_pca$Frame_bc, main="QQ Plot para Frame_bc")
+qqline(dataej3_pca$Frame_bc, col="red")
+
+# QQ plot para BkFat_bc
+qqnorm(dataej3_pca$BkFat_bc, main="QQ Plot para BkFat_bc")
+qqline(dataej3_pca$BkFat_bc, col="red")
+
+```
+
 
  
 ## Ejercicio 4
