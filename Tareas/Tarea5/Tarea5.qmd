@@ -4,8 +4,8 @@ author: "Aldo Carmona, Diego Arellano, Mateo De La Roche, Victor Contreras"
 published_date: "27/02/2024"
 format: pdf
 editor: visual
-echo: true #default
-include: true #default
+echo: true #código
+include: true #imprimir
 output:
   pdf_document: 
     latex_engine: xelatex
@@ -13,6 +13,12 @@ output:
 editor_options:
   chunk_output_type: console
 ---
+
+```{r, include=FALSE}
+library(corrplot)
+
+```
+
 
 ## Ejercicio 1
 
@@ -47,6 +53,35 @@ $$
 \end{pmatrix}
 $$
 
+tomando en cuenta la matriz de varianzas y covarianzas de las Z's
+$$ 
+Var(Z_1) = (0.9)^2 * 1 = 0.81 \\
+Var(Z_2) = (0.7)^2 * 1 = 0.49 \\
+Var(Z_3) = (0.5)^2 * 1 = 0.25 \\
+Cov(Z_1, Z_2) = 0.63 \\
+Cov(Z_1, Z_3) = 0.45 \\
+Cov(Z_2, Z_3) = 0.35
+$$
+construimos la siguiente matriz y procedemos al método de factor principal con m=1
+```{r}
+Sigma <- matrix(c(0.81, 0.63, 0.45,
+                  0.63, 0.49, 0.35,
+                  0.45, 0.35, 0.25),
+                nrow = 3, byrow = TRUE)
+
+psi <- matrix(c(0.19, 0, 0,
+                0, 0.51, 0,
+                0, 0, 0.75), nrow = 3, byrow = TRUE)
+
+#Construimos L con un coeficiente de carga
+L <- NULL
+L <- cbind(L,eigen(Sigma)$vectors[,1]*sqrt(eigen(Sigma)$values[1]))
+
+# LL' + psi
+(L %*% t(L)) + psi
+
+```
+
 ## Ejercicio 2
 
 Se tiene la siguiente matriz de factores no rotada, obtenida utilizando el método de componentes principales y considerando 4 factores.
@@ -61,20 +96,96 @@ colnames(ej2_factores) <- paste0("F",1:4)
 ej2_factores
 
 ```
+```{r}
+R <- cor(ej2_factores)
+p <- nrow(R)
+eigen_fact <- eigen(R)
+
+# ¿Cuál es la proporición de varianza explicada por los factores?
+cumsum(eigen_fact$values)/p
+
+eigen_fact$values
+
+L <- NULL
+
+# Vamos a tomar en cuenta m=2
+for(i in 1:2){
+L <- cbind(L,round(eigen_fact$vectors[,i]*sqrt(eigen_fact$values[i]),2))
+}
+
+# ¿Cuáles son las comunalidades?
+(h <- diag(L %*% t(L)))
+
+# ¿cuáles son las unicidades? 
+(psihat <- rep(1,4) - diag(L %*% t(L)))
+```
 
 
 a. A partir de estos resultados, ¿se puede saber cómo agrupar las variables? Explicar.
+Se pueden tomar en cuenta varios criterios como que el eigenvalor $\lambda_i > 1$ y que la varianza explicada sea un porcentaje aceptable. En este caso podríamos elegir $m = 2$ ya que explica un 74% de la varianza y sus eigenvalores son mayores a 1. 
 
 b. ¿Cuál es la variable que más se identifica con las características? Explicar porqué.
+
+Sería el tercer factor original, ya que su unicidad es menor.
+
 
 ## Ejercicio 3
 
 Verificar las siguientes identidades:
 
-a. $(I + L' \Psi^{-1} L)^{-1} (I + L' \Psi^{-1} L) = I - (I + L' \Psi^{-1} L)^{-1}$
+a. $(I + L' \Psi^{-1} L)^{-1} ( L' \Psi^{-1} L) = I - (I + L' \Psi^{-1} L)^{-1}$
+
+
+$$
+(I + L' \Psi^{-1} L)^{-1} ( L' \Psi^{-1} L) = I - (I + L' \Psi^{-1} L)^{-1}
+$$
+
+Multiplicando ambos lados por \((I + L' \Psi^{-1} L)\) para deshacernos del inverso en el lado derecho, obtenemos:
+
+$$
+(I + L' \Psi^{-1} L)(I + L' \Psi^{-1} L)^{-1} ( L' \Psi^{-1} L) = (I + L' \Psi^{-1} L)(I - (I + L' \Psi^{-1} L)^{-1})
+$$
+
+Esto se simplifica a:
+
+$$
+L' \Psi^{-1} L = L' \Psi^{-1} L - (I + L' \Psi^{-1} L)^{-1} L' \Psi^{-1} L + (I + L' \Psi^{-1} L)^{-1}
+$$
+
+Dado que \((I + L' \Psi^{-1} L)(I + L' \Psi^{-1} L)^{-1} = I\), podemos simplificar aún más:
+
+$$
+L' \Psi^{-1} L = L' \Psi^{-1} L - L' \Psi^{-1} L + I
+$$
+QED
 
 b. $L'(LL' + \Psi)^{-1} = (I + L' \Psi^{-1} L)^{-1} L' \Psi^{-1}$
 
+Para verificar esta identidad, podemos usar la identidad de Woodbury y la inversión de matrices:
+
+$$
+L'(LL' + \Psi)^{-1} = (I + L' \Psi^{-1} L)^{-1} L' \Psi^{-1}
+$$
+
+Usamos la identidad de Woodbury para la inversión de matrices:
+
+$$
+(LL' + \Psi)^{-1} = \Psi^{-1} - \Psi^{-1} L (I + L' \Psi^{-1} L)^{-1} L' \Psi^{-1}
+$$
+
+Multiplicamos ambos lados por $L'$ desde la izquierda:
+
+$$
+L'(LL' + \Psi)^{-1} = L' \Psi^{-1} - L' \Psi^{-1} L (I + L' \Psi^{-1} L)^{-1} L' \Psi^{-1}
+$$
+
+Dado que $L' \Psi^{-1} L (I + L' \Psi^{-1} L)^{-1} = I - (I + L' \Psi^{-1} L)^{-1}$, podemos simplificar:
+
+$$
+L'(LL' + \Psi)^{-1} = (I + L' \Psi^{-1} L)^{-1} L' \Psi^{-1}
+$$
+
+QED.
 
 ## Ejercicio 4
 
@@ -89,8 +200,41 @@ $$
 \end{pmatrix}
 $$
 
-Mostrar que hay una solución única para $L$ y $\Psi$ con $\Sigma = LL' + \Psi$, pero que $\psi_3 < 0$, así que la elección no es admisible.
+Mostrar que hay una solución única para $L$ y $\Psi$ con $\Sigma = LL'+\Psi$, pero que $\psi_3 < 0$, así que la elección no es admisible.
 
+
+como m=1, tenemos el siguiente sistema de ecuaciones:
+
+$$ 
+\iff l_{11}^2 + \psi_1 = 1,\quad  l_{11}*l_{12} = 0.4,\quad l_{11}*l_{12} = 0.9 \\
+
+l_{12}^2 + \psi_2 = 1,\quad l_{12}*l_{13} = 0.7 \\
+
+l_{13}^2 + \psi_3 = 1 
+$$
+
+Continuamos con el sistema
+
+$$ 
+\iff l_{11}^2 = 1-\psi_1,\quad l_{12}=\frac{0.4}{l_{11}},\quad l_{13} = \frac{0.9}{l_{11}}
+$$
+$$
+l_{12}^2 = 1 - \psi_2,\quad \frac{0.4}{l_{11}}*\frac{0.9}{l_{11}} = 0.7
+$$
+$$
+l_{13}^2 = 1 - \psi_3 
+$$
+
+finalmente:
+
+$$ 
+\iff l_{11} = 0.7171 \\
+\iff l_{12} = 0.5577 \\
+\iff l_{13} = 1.2549 \\
+\iff \psi_3 = -0.5747 < 0 
+$$
+
+como tenemos una varianza negativa, esta solución no es admisible.
 
 ## Ejercicio 5
 
@@ -98,11 +242,104 @@ Este ejercicio se basa en los datos de monitoreo atmosférico (REDMA) que se enc
 
 a. Hacer un análisis de estos datos, creando una base de datos con las mediciones de contaminación para cada estación de todos los contaminantes disponibles.
 
+```{r}
+library(readxl)
+library(dplyr)
+library(tidyr)
+
+REDMA19PM10 <- read_xls("2019PM10.xls")
+REDMA20PM10 <- read.csv("2020PM10.csv") #El archivo viene así de origen
+REDMA19PM25 <- read_xls("2019PM25.xls")
+REDMA20PM25 <- read_xls("2020PM25.xls")
+REDMA19PST <- read_xls("2019PST.xls")
+REDMA20PST <- read_xls("2019PST.xls")
+
+
+
+REDMA20PM10 <- REDMA20PM10 %>%
+                mutate(FECHA = as.Date(FECHA,format="%d/%m/%y"),
+                TIPO = "PM10") %>%
+                tibble()
+REDMA19PM10 <- REDMA19PM10 %>%
+                mutate(FECHA = as.Date(FECHA),
+                       TIPO = "PM10")
+REDMA19PM25 <- REDMA19PM25 %>%
+                mutate(FECHA = as.Date(FECHA),
+                       TIPO = "PM25")
+REDMA20PM25 <- REDMA20PM25 %>%
+                mutate(FECHA = as.Date(FECHA),
+                       TIPO = "PM25")
+REDMA19PST <- REDMA19PST %>%
+                mutate(FECHA = as.Date(FECHA),
+                       TIPO = "PST")
+REDMA20PST <- REDMA20PST %>%
+                mutate(FECHA = as.Date(FECHA),
+                       TIPO = "PST")
+
+REDMA <- full_join(REDMA19PM10,REDMA20PM10) %>%
+             full_join(REDMA19PM25) %>%
+             full_join(REDMA20PM25) %>%
+             full_join(REDMA19PST) %>%
+             full_join(REDMA20PST)
+
+REDMA <- REDMA[!is.na(REDMA$FECHA),]
+
+REDMA[REDMA==-99] <- 0 # reemplazo -99 por NAs
+
+REDMA2 <- REDMA %>%
+           pivot_wider(names_from=TIPO,values_from=c(MER,PED,TLA,XAL,LOM,LPR,NEZ,UIZ))
+REDMA2 <- REDMA2 %>%
+select(-PED_PST,-LOM_PM25,-LOM_PST,-LPR_PM25,-LPR_PST,-NEZ_PM25,-NEZ_PST,-MER_PST) # quito algunas variables
+
+colnames(REDMA2)
+
+REDMA2[is.na(REDMA2)] <- 0 # Reemplazamos -99 por 0 para el cálculo de scores 
+
+R <- cor(REDMA2 %>% select(-FECHA, -SHA, -COY, -SAG), use = "na.or.complete")
+
+
+corrplot(R, method = "ellipse", order = "hclust")
+
+
+```
+Observamos que en general hay correlaciones postivas muy altas, cuando hay correlaciones negativas son muy bajas. 
+
 b. Hacer un análisis factorial exploratorio de estos datos. Interpretar y reportar los resultados: ¿Se pueden identificar factores?
+```{r}
+p <- nrow(R)
+eigen_REDMA <- eigen(R)
+
+# ¿Cuál es la proporición de varianza explicada por los factores?
+cumsum(eigen_REDMA$values)/p
+
+eigen_REDMA$values
+
+L <- NULL
+
+# Vamos a tomar en cuenta m=2
+for(i in 1:2){
+L <- cbind(L,round(eigen_REDMA$vectors[,i]*sqrt(eigen_REDMA$values[i]),2))
+}
+
+# ¿Cuáles son las comunalidades?
+(h <- diag(L %*% t(L)))
+
+# ¿cuáles son las unicidades? 
+(psihat <- rep(1,p) - diag(L %*% t(L)))
+```
+Se puede observar que con 2 factores logramos explicar el 77% de la varianza y que sus eigenvalores son mayores a uno. Además, los valores de las comunalidades son bastante grandes. 
 
 c. Calcular los scores por el método de máxima verosimilitud y por el método de componentes principales.
+```{r}
+library(psych)
+# Máxima Verosimilitud
+(m1 <-  fa(R, nfactors = 2, rotate = "none", fm = "ml", scores = "regression"))
+(m2 <-  fa(R, nfactors = 2, rotate = "none", fm = "pa", scores = "Bartlett"))
+```
 
 d. ¿Se puede crear un índice de monitoreo ambiental que tome en cuenta todos los contaminantes? Si es así, ¿Cómo se puede interpretar su comportamiento a lo largo del tiempo?
+
+Al haber realizado este análisis, se puede concluir que sí se puede crear un índice que tome en cuenta todos los contaminantes.
 
 ## Ejercicio 6
 
@@ -138,13 +375,68 @@ Las variables son:
 
 a. Encontrar las correlaciones canónicas muestrales.
 
+```{r}
+R <- matrix(c(
+  1, 0.615, -0.111, -0.266,
+  0.615, 1, -0.195, -0.085,
+  -0.111, -0.195, 1, -0.269,
+  -0.266, -0.085, -0.269, 1
+), nrow = 4, byrow = TRUE)
+
+
+RX1 <- R[1:2, 1:2] 
+RX2 <- R[3:4, 3:4] 
+R12 <- R[1:2, 3:4]
+R21 <- R[3:4, 1:2]
+
+A <- solve(RX1)%*% R12 %*% solve(RX2) %*% R21
+
+B <- solve(RX2)%*% R21 %*% solve(RX1) %*% R12
+```
+
 b. Determinar el primer par canónico $\hat{U}_1, \hat{V}_1$ e interpretar estas cantidades.
 
-## Ejercicio 7 
+```{r}
+eigen(A)$vectors[,1]
 
-Los datos que se usan en este ejercicio están relacionados con campañas de marketing
-directas de un banco portugués. Las campañas de marketing están basados en llama-
-das telefónicas. Con frecuencia, más de un contacto con el mismo cliente fue requerido, para accesar si el producto (depósito bancario a plazo) puede ser o no contratado. El archivo con la información relevante se puede obtener de la siguiente liga: [bank.zip](https://archive.ics.uci.edu/ml/machine-learning-databases/00222/bank.zip)
+eigen(B)$vectors[,1]
+```
+
+Sabemos que la combinación lineal $a'Z^{(1)} = (0.999)Z^{(1)}_1 + (-0.003)Z^{(1)}_2$ y $b'Z^{(2)} = (-0.524)Z^{(2)}_1 + (-0.851)Z^{(2)}_2$ maximiza la correlación entre $Z^{(1)}$ y $Z^{(2)}$ 
+
+```{r}
+sqrt(eigen(A)$values[1])
+```
+La correlación entre las dos primeras variables canónicas es 0.326. 
+
+```{r}
+eigen(A)$values[1]/sum(eigen(A)$values)
+```
+La variabilidad explicada por las primeras variables canónicas es $0.785$. 
+
+## Ejercicio 7
+
+Los datos que se usan en este ejercicio están relacionados con campañas de marketing directas de un banco portugués. Las campañas de marketing están basados en llamadas telefónicas. Con frecuencia, más de un contacto con el mismo cliente fue requerido, para accesar si el producto (depósito bancario a plazo) puede ser o no contratado. El archivo con la información relevante se puede obtener de la siguiente liga: [bank.zip](https://archive.ics.uci.edu/ml/machine-learning-databases/00222/bank.zip)
+
+Propongan un modelo para realizar CCA.
+
+```{r}
+ej7_datos <- read.csv("bank.csv", header = TRUE, sep = ";")
+
+summary(ej7_datos)
+str(ej7_datos)
+
+# Definir los conjuntos de variables
+set1 <- ej7_datos[, c("age", "balance", "day", "duration", "campaign", "pdays", "previous")]
+set2 <- model.matrix(~ job + marital + education + default + housing + loan + contact + month + poutcome + y - 1, data = ej7_datos)
+
+# Realizar CCA
+cca_result <- cancor(set1, set2)
+
+# Ver los resultados
+print(cca_result)
+
+```
 
 
 ## Ejercicio 8
@@ -155,10 +447,45 @@ Objetivo: determinar si las variables fisiológicas se relacionan de alguna form
 
 a. Analizar la matriz de correlaciones relevantes entre las variables de los dos grupos (dentro y entre grupos de variables).
 
+```{r}
+
+datos <- read.table("FitnessClubData.dat", header = TRUE)
+X <- datos[,1:3]
+Y <- datos[,4:6]
+
+(R <- round(cor(datos),3))
+corrplot(R, method = "ellipse")
+
+```
+
+Las variables que parecen tener más correlación son la cintura con las lagartijas y las sentadillas. 
+
 b. Probar la hipótesis $H_0 : \Sigma_{xy} = 0$.
 
+```{r, include=FALSE}
+library(CCA)
+```
 
-## Ejercicio 9
+
+```{r}
+cca_xy <- cc(X,Y)
+corr_1 <- cca_xy$cor[1]
+corr_2 <- cca_xy$cor[2]
+
+n <- nrow(datos)
+p <- 3; q <- 3
+
+lambda <- -n*log((1-corr_1)*(1-corr_2))
+1 - pchisq(lambda, df = p*q)
+
+# Con la corrección de Bartlett
+m <- n-0.5*(p+q+3)
+lambdaB <- -m*log((1-corr_1)*(1-corr_2))
+1 - pchisq(lambdaB, df = p*q)
+```
+Se rechaza $H_0$
+
+## Ejercicio 9 
 
 Una muestra aleatoria de $n = 70$ familias será encuestada para determinar la asociación entre ciertas variables 'demográficas' y ciertas variables de 'consumo'. Sea:
 
@@ -202,6 +529,37 @@ R_{21} & R_{22} \\
 $$
 
 a. Determinar las correlaciones canónicas muestrales y probar la hipótesis $H_0 : \Sigma_{12} = 0$ (o equivalente $\rho_{12} = 0$ al nivel de 5%). Si se rechaza $H_0$, probar la significancia de la primera correlación canónica.
+```{r}
+R <- matrix(c(1, 0.8, 0.26, 0.67, 0.34,
+              0.8, 1, 0.33, 0.59, 0.34,
+              0.26, 0.33, 1, 0.37, 0.21,
+              0.67, 0.59, 0.37, 1, 0.35,
+              0.34, 0.34, 0.21, 0.35, 1), nrow=5, byrow=TRUE)
+
+R12 <- R[1:2, 3:5]
+R21 <- R[3:5, 1:2]  # Transpuesta de R12
+
+# Realizar correlación canónica
+cca_result <- cancor(R12, t(R21))  # Usamos la transpuesta de R21 para ajustar las dimensiones
+
+# Mostrar las correlaciones canónicas
+print(cca_result$cor)
+
+# Calcular los estadísticos para probar la hipótesis de correlaciones nulas
+n <- 70  # tamaño de la muestra
+m <- min(nrow(R12), ncol(R12))
+k <- 1  # para probar la primera correlación canónica
+# Asegurarse de que la correlación canónica no sea exactamente 1
+cor_squared <- cca_result$cor[1:k]^2
+cor_squared[cor_squared >= 1] <- 1 - .Machine$double.eps  # Restar un pequeño valor para evitar log(0)
+
+chi_sq_value <- -(n - 1 - (1/2) * (nrow(R12) + ncol(R12) + 1)) * sum(log(1 - cor_squared))
+p_value <- pchisq(chi_sq_value, df = m * nrow(R12) * ncol(R12), lower.tail = FALSE)
+
+# Imprimir resultados del test
+cat("Chi-squared Value:", chi_sq_value, "\n")
+cat("p-Value:", p_value, "\n")
+```
 
 b. Usando las variables estandarizadas, construir las variables canónicas correspondientes a las correlaciones canónicas significativas.
 
@@ -213,13 +571,45 @@ e. ¿Tienen las variables demográficas algo que ver con las variables de consum
 
 
 
-## Ejercicio 10
+## Ejercicio 10 
 
 (Correlaciones para medidas angulares) Algunas observaciones tales como la dirección del viento, son en forma de ángulos. Un ángulo $\theta_2$ puede ser representado como el par $x = (\cos(\theta_2), \sin(\theta_2))'$.
 
 a. Mostrar que $x = \sqrt{b_1^2 + b_2^2} (\cos(\theta_2 - \beta)$ donde $b_1/\sqrt{b_1^2 + b_2^2} = \cos(\beta)$ y $b_2/\sqrt{b_1^2 + b_2^2} = \sin(\beta)$.
 
 (Hint: $\cos(\theta_2 - \beta) = \cos(\theta_2) \cos(\beta) + \sin(\theta_2) \sin(\beta)$).
+
+expresamos $x = (\cos(\theta_2), \sin(\theta_2))'$ y queremos mostrar que:
+
+$$
+x = \sqrt{b_1^2 + b_2^2} (\cos(\theta_2 - \beta)),
+$$
+
+donde $\beta$ se define tal que:
+
+$$
+\cos(\beta) = \frac{b_1}{\sqrt{b_1^2 + b_2^2}} \quad \text{y} \quad \sin(\beta) = \frac{b_2}{\sqrt{b_1^2 + b_2^2}}.
+$$
+
+Esto implica que:
+
+$$
+\cos(\theta_2 - \beta) = \cos(\theta_2) \cos(\beta) + \sin(\theta_2) \sin(\beta),
+$$
+
+lo cual se puede sustituir en las definiciones de $\cos(\beta)$ y $\sin(\beta)$ para obtener:
+
+$$
+\cos(\theta_2 - \beta) = \cos(\theta_2) \frac{b_1}{\sqrt{b_1^2 + b_2^2}} + \sin(\theta_2) \frac{b_2}{\sqrt{b_1^2 + b_2^2}}.
+$$
+
+Multiplicando ambos lados por $\sqrt{b_1^2 + b_2^2}$:
+
+$$
+\sqrt{b_1^2 + b_2^2} \cos(\theta_2 - \beta) = b_1 \cos(\theta_2) + b_2 \sin(\theta_2).
+$$
+
+Esto muestra que $x = \sqrt{b_1^2 + b_2^2} (\cos(\theta_2 - \beta))$ como se deseaba demostrar.
 
 b. Sea $X^{(1)}$ con una única componente $X^{(1)}_1$. Mostrar que la correlación canónica simple es
 
@@ -228,6 +618,27 @@ $$
 $$
 
 Selecciona la variable canónica $V_1$ tomando en cuenta seleccionar un nuevo origen $\beta$ para el ángulo $\theta_2$.
+
+La correlación entre $X^{(1)}_1$ y $\cos(\theta_2 - \beta)$ se puede expresar como sigue:
+
+$$
+\text{Corr}(X^{(1)}_1, \cos(\theta_2 - \beta)) = \frac{\text{Cov}(X^{(1)}_1, \cos(\theta_2 - \beta))}{\sigma_{X^{(1)}_1} \sigma_{\cos(\theta_2 - \beta)}}
+$$
+
+La función $\cos(\theta_2 - \beta)$ se puede reescribir utilizando la identidad trigonométrica para ángulos sumados, que es:
+
+$$
+\cos(\theta_2 - \beta) = \cos(\theta_2) \cos(\beta) + \sin(\theta_2) \sin(\beta)
+$$
+
+Al cambiar el valor de $\beta$, modificamos la relación entre $\theta_2$ y $X^{(1)}_1$, optimizando la correlación entre estas dos variables. El valor óptimo de $\beta$ que maximiza esta correlación puede ser encontrado mediante:
+
+$$
+\rho_1' = \max_{\beta} \text{Corr}(X^{(1)}_1, \cos(\theta_2 - \beta))
+$$
+
+Este valor máximo, $\rho_1'$, representa la correlación canónica simple entre las dos variables y se obtiene ajustando $\beta$ para alinear lo más posible las variaciones de $\theta_2$ expresadas a través de $\cos(\theta_2 - \beta)$ con las variaciones en $X^{(1)}_1$.
+
 
 c. Sea $X^{(1)}_1$ el ozono (en partes por millón) y $\theta_2$ = dirección de viento medida desde el norte. Se tomaron 19 observaciones en el centro de Milwaukee, Wisconsin, dando la matriz de correlaciones:
 
