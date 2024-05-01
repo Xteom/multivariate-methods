@@ -1,0 +1,155 @@
+---
+title: "Clasificación: LDA"
+lang: es
+author: "Jorge de la Vega"
+date: "`r Sys.Date()`"
+format: 
+  html:
+    page-layout: full
+    html-math-method: katex
+    embed-resources: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      comment = NULL)
+library(dplyr)
+```
+
+## Ejemplo: Salmón canadiense o americano
+
+Para distinguir a los salmones canadienses de los americanos (Alaska) se mide el diámetro de los anillos. Usualmente, los anillos de los salmones de río (nacidos en Canadá) son menores a los de los americanos.
+
+Los datos corresponden a las siguientes variables: 
+
+- `lugar`: lugar de nacimiento (1=Alaska, 2 = Canadá)
+- `sexo`: 1 = macho, 2 = hembra.
+- `rio`: 100*diámetro de anillos del primer año en río (pulgadas)
+- `mar`: 100*diámetro de anillos del primer año en mar (pulgadas)
+
+```{r}
+salmon <- read.table("https://raw.githubusercontent.com/jvega68/EA3/master/datos/J%26W/T11-2.DAT")
+names(salmon) <- c('lugar','sexo','rio','mar')
+head(salmon)
+with(salmon,plot(rio,mar,col = lugar,pch = 19))
+legend("bottomleft",legend = c("canada","alaska"),col = c("red","black"),pch = c(19,19))
+```
+
+En este ejemplo se supone que toda la muestra es de entrenamiento. Se puede verificar que los datos son aproximadamente normales, y podemos ver que las varianzas son diferentes, aunque supondremos primero que tienen la misma varianza. Consideraremos sólo las variables `rio` y `mar` para hacer la clasificación.
+
+1. Obtener el vector de medias y la matriz de varianzas de cada lugar.
+
+```{r}
+n1 <- nrow(salmon[salmon$lugar == 1,])
+n2 <- nrow(salmon[salmon$lugar == 2,])
+(mu1 <- colMeans(salmon[salmon$lugar == 1, c(3,4)]))
+(mu2 <- colMeans(salmon[salmon$lugar == 2, c(3,4)]))
+(S1 <- var(salmon[salmon$lugar == 1, c(3,4)]))
+(S2 <- var(salmon[salmon$lugar == 2, c(3,4)]))
+```
+
+2. Obtener la varianza agrupada para los dos lugares $S_p$.
+
+```{r}
+(Sp <- ((n1-1)*S1 + (n2-1)*S2)/(n1+n2-2))
+```
+
+3. Aplicar la regla de clasificación  para poblaciones con varianza común, basada en el criterio ECM, con costos iguales y graficar los datos. 
+
+```{r}
+plot(salmon[,c(3,4)], col = salmon$lugar,
+     pch= 16, cex = 0.5)
+points(mu1[1],mu1[2], col = 1, pch = 19, cex = 2)  # media Alaska
+points(mu2[1],mu2[2], col = 2, pch = 19, cex = 2)  # media Canada
+# Aplicando la regla a cada punto
+clas <- ifelse(mahalanobis(salmon[, c(3,4)], mu1, S1) < 
+               mahalanobis(salmon[, c(3,4)], mu2, S2), 1, 2)
+salmon2 <- cbind(salmon, clas)
+head(salmon2)
+points(salmon[, 3], salmon[, 4], pch = clas, col = ifelse(salmon$lugar == 1, 1, 2))
+```
+
+4. Encontrar la línea frontera entre las dos regiones y el vector de proyección **w**.
+
+```{r}
+plot(salmon[,c(3,4)], col = salmon$lugar, cex =0.5)
+points(mu1[1],mu1[2], col = 1, pch = 19, cex = 2)  # media Alaska
+points(mu2[1],mu2[2], col = 2, pch = 19, cex = 2)  # media Canada
+w <- solve(Sp) %*% (mu1-mu2)  # vector de proyección
+u <- w/sqrt(sum(w^2))         # vector normalizado
+m <- as.numeric(t(u)%*%(mu1+mu2)/2)	# umbral
+y <- m/u[2] - u[1]/u[2]*seq(60,180,1)  # gráfica de la línea frontera m = y*u2+x*u1
+lines(seq(60,180,1), y, col = "green4")  
+
+# graficamos la distribución de los scores
+scores <- as.matrix(salmon[, c(3,4)]) %*% u
+plot(density(scores[salmon$lugar == 1,]), 
+     xlim = c(min(scores)-10, max(scores)+10), 
+     main = "Scores proyectados")
+lines(density(scores[salmon$lugar == 2,]), col = 2)
+```
+
+5. Aplicar la regla de clasificación cuadrática.
+
+```{r}
+S1inv <- solve(S1)
+S2inv <- solve(S2)
+
+y <- function(x){
+        as.numeric(-1/2*(as.numeric(x) %*% (S1inv-S2inv) %*% t(x)) +
+                   (mu1 %*% S1inv - mu2 %*% S2inv) %*% t(x) )
+}
+
+m <- as.numeric(1/2*log(det(S1)/det(S2)) + 
+                1/2*(as.numeric(mu1 %*% S1inv %*% mu1) -
+                  as.numeric(mu2 %*% S2inv %*% mu2)))
+
+scores2 <- NULL
+for(i in 1:nrow(salmon)) scores2[i] <- y(salmon[i,c(3,4)])
+clas2 <- ifelse(scores2 < m, 2,1)
+plot(salmon[,c(3,4)], pch = ifelse(scores2 < m, "C","A"),
+                      col = ifelse(scores2 < m , 2,1))
+points(salmon[,c(3,4)], col = salmon$lugar, cex = 0.5)
+
+```
+
+
+
+6. Evaluar el desempeño de la regla de clasificación lineal y cuadrática. 
+
+```{r}
+# Matriz de confusión para la regla lineal
+MCl <- table(salmon$lugar,clas)
+
+#Matriz de confusión par la regla cuadrática
+MCc <- table(salmon$lugar,clas2)
+
+#APER 
+(APERl <- (MCl[1,2]+MCl[2,1])/ sum(MCl))
+(APERc <- (MCc[1,2]+MCc[2,1])/ sum(MCc))
+```
+
+Usando paquetes: 
+
+```{r}
+library(MASS)
+library(klaR)
+lda1 <- lda(lugar ~ rio + mar, data = salmon)
+partimat(as.factor(lugar) ~ rio + mar, method = "lda" ,data = salmon)
+partimat(as.factor(lugar) ~ rio + mar, method = "qda" ,data = salmon)
+```
+
+Verificando que los vectores son adecuados:
+
+```{r}
+plot(seq(0,0.1,10), seq(0,0.1,10), type = "n", 
+     xlim = c(-0.2,0.2), ylim = c(-0.2,0.2))
+arrows(x0=0,y0=0,x1=lda1$scaling[1],y1=lda1$scaling[2],length = 0.01)
+arrows(x0=0,y0=0,x1=u[1],y1=u[2],length = 0.01,col = "red")
+```
+
+
+
+

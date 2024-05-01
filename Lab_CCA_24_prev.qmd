@@ -1,0 +1,375 @@
+---
+title: "Ejemplos Análisis de Correlación Canónica (CCA)"
+lang: es
+author: "Jorge de la Vega"
+date: "11 04 2024"
+format: 
+  html:
+    page-layout: full
+    html-math-method: katex
+    embed-resources: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      comment = NULL, 
+                      fig.width=12, 
+                      fig.height=8, 
+                      fig.align = "center")
+options(width = 160)
+options(digits = 3)
+library(corrplot)
+library(dplyr)
+library(corrplot)
+library(candisc)  # tiene una función que se llama cancor, así que hay que tener cuidado
+library(CCA)      # función cc
+```
+
+
+# Correlación Canónica 
+
+## Ejemplo 1: Relación entre salarios y otras características.
+
+Los datos que se encuentran en el archivo `Salarios.csv` corresponden a observaciones de 200 empleados que contienen datos salariales como demograficos:
+
+- salario actual (log pesos)
+- salario inicial (log pesos)
+- nivel educación (años)
+- edad (años)
+- experiencia relevante en el tiempo de contratación (años)
+- senior: señoreaje correspondiente al nivel alcanzado en la empresa (score 0-100).
+
+Se quiere hacer un análisis simétrico para relacionar las variables salariales (inicial y actual) ($p=2$) con las otras variables de educación, edad, experiencia y señoreaje ($q = 4$). 
+
+El orden de los conjuntos no es relevante porque estamos considerando un análisis de tipo simétrico. Los datos también se prestan a un análisis de tipo asimétrico, posiblemente considerando a los sueldos como funciones de las otras variables.
+
+Primero, cargamos y vemos los datos.
+
+```{r}
+salarios <- read.csv("https://raw.githubusercontent.com/jvega68/EA3/master/datos/Salarios.csv")
+str(salarios)
+```
+
+Lo único que necesitamos para hacer el análisis de correlación canónica es la matriz de correlaciones, pero en realidad el programa ya hace todo por nosotros, sólo tenemos que decirle qué grupos de variables son los que queremos relacionar.
+
+Para ganar intuición, se muestra la matriz de correlaciones.
+
+```{r fig.asp = T}
+(R <- round(cor(salarios),3))
+corrplot(R, method = "ellipse")
+# Partimos los datos en los dos grupos: 
+X <- as.matrix(salarios[,1:2])
+Y <- as.matrix(salarios[,3:6])
+cov(X,Y) # parte de la matriz de correlaciones interesante para CCA
+```
+
+Podemos visualizar cada componente de la matriz de correlaciones: 
+
+```{r}
+# matrices de correlaciones separadas 
+# la cross es significativa con tirandole a -1 o 1 
+# matriz de covarianza cruzada
+img.matcor(matcor(X, Y), type = 2) # paquete CCA
+```
+
+
+### Cálculo manual
+
+```{r}
+Sx <- var(X)
+Sy <- var(Y)
+Sxy <- cov(X,Y)
+Syx <- cov(Y,X)
+# solve es la inversa
+A <- solve(Sx)%*% Sxy %*% solve(Sy) %*% Syx
+B <- solve(Sy)%*% Syx %*% solve(Sx) %*% Sxy
+A
+B
+eigen(A)$values
+eigen(B)$values
+
+# son los mismos valores y los otros dos son prácitmcamente 0 porque 
+# son linealmente  dependientes
+
+# variables canónicas:
+U <- X %*% A
+V <- Y %*% B
+U
+V
+```
+
+Por otro lado, usando $H$ y $H'$, hay varios temas de escalas:
+
+```{r}
+library(expm)
+#sqrtm> saca raiz cuadrada de la matriz 
+H <- sqrtm(solve(Sx))%*%Sxy%*%sqrtm(solve(Sy))
+
+Ap <- H%*%t(H) # Ap de proyecccion
+Bp <- t(H) %*% H
+eigen(Ap)
+eigen(Bp)
+# cambia el vector propio pero no los valores propios
+```
+
+Calculamos los scores asociados: 
+
+```{r}
+x1 <- X %*% eigen(A)$vectors[,1]
+```
+
+
+```{r}
+y1 <- Y %*% eigen(B)$vectors[,1]
+# Re se queda solo con los reales
+scores1 <- Re(cbind(x1, y1))
+plot(scores1)
+c(var(scores1[,1]),var(scores1[,2])) # Notar que no tienen varianza unitaria los scores
+```
+
+
+## Con matrices de correlación
+
+
+```{r}
+datos2 <- scale(salarios)
+Xs <- datos2[,1:2]
+Ys <- datos2[,3:6]S
+
+Rx <- var(Xs)
+Ry <- var(Ys)
+Rxy <- cov(Xs,Ys)
+Ryx <- cov(Ys,Xs)
+As <- solve(Rx)%*% Rxy %*% solve(Ry) %*% Ryx
+Bs <- solve(Ry)%*% Ryx %*% solve(Rx) %*% Rxy
+#pesos totalmente estandarizados: 
+As %*% solve(sqrt(diag(diag(var(X %*% As)))))
+Bs %*% solve(sqrt(diag(diag(var(Y %*% Bs)))))
+```
+
+
+A continuación ejecutamos el modelo de correlación canónica con la función estándar. Nota: esta función resta la media de los datos por default, pero esto no debe afectar los eigenvalores, aunque puede que sí a los eigenvectores (transformación afín). 
+
+```{r}
+(cca1 <- stats::cancor(x = X, y = Y))
+```
+
+Usando la funcion disponible en el paquete CCA:
+
+```{r}
+cca2 <- cc(X,Y) # No conviene imprimir todo, pueso calcula todo
+# Ambos dan el mismoi resultado:
+cca1$cor
+cca2$cor
+```
+
+
+Las correlaciones entre las dos funciones canónicas, son 0.748 y 0.458 respectivamente.
+Las dos pares de variables canónicas son:
+
+- Z1 = 0.041 * log_salario_actual + 0.134 * log_salario_inicial
+- W1 = 0.02213 * educación - 0.00068 * senior - 0.00172 * edad + 0.00301 * experiencia
+- Z2 = 0.37 * log_salario_actual - 0.39 * log_salario_inicial
+- W2 = -0.0047 * educación + 0.005 * senior - 0.0038 * edad - 0.0012 * experiencia
+
+Los coeficientes se obtienen de aquí: 
+```{r}
+cca1$xcoef
+cca1$ycoef
+```
+
+Vemos que los coeficientes que corresponden al calculo con cca2, no se preservan:
+
+```{r}
+cca2$xcoef
+cca2$ycoef
+
+# Los vectores de cca2 no están normalizados, y tienen direcciones opuestas, 
+plot(runif(200), xlim = c(-1,1),ylim = c(-1,1),type="n")
+arrows(x0=0,y0=0,x1=cca1$xcoef[1,1], y1=cca1$xcoef[2,1],length = 0.1)
+arrows(x0=0,y0=0,x1=cca1$xcoef[1,2], y1=cca1$xcoef[2,2],length = 0.1)
+arrows(x0=0,y0=0,x1=cca2$xcoef[1,1], y1=cca2$xcoef[2,1],length = 0.1, col ="red")
+arrows(x0=0,y0=0,x1=cca2$xcoef[1,2], y1=cca2$xcoef[2,2],length = 0.1, col = "red")
+```
+
+A continuación doy mi interpretación de los resultados obtenidos: 
+
+- los coeficientes canónicos se interpretan de una forma análoga a como se haría en regresión: como tasas de cambio (ya que se asume una estructura lineal). Para la variable salario, por ejemplo, un incremento de una peso en el log del salario actual, lleva a un incremento de 0.041 unidades en la primera variabe canónica, cuando todo lo demás se mantiene constante.
+
+- La primera función canónica da un mayor peso al salario inicial con respecto al actual mostrando que es más importante en esa empresa cómo se inicia en el trabajo. La función W1 pone un mayor peso en la educación y en segundo lugar a la experiencia en años, mientras que la edad y el señoriaje tiene un efecto opuesto en el salario. El hecho de que las variables canónicas tengan una correlación positiva se puede interpretar en el sentido de que el nivel salarial es más alto conforme más educación y experiencia mientras que tiene un efecto opuesto la edad y el señoriaje en el sueldo. 
+
+- La segunda componente es un contraste entre el sueldo inicial y el actual. La segunda variable da una mayor importancia al señoreaje, y por eso tiene correlación positiva con el salario actual, mientras que las otras variables se relacioan en el mismo sentido con el salario inicial. 
+
+Vemos las gráficas de las respectivas funciones canónicas para ver qué información nos proveen. La función `cancor` no calcula los scores y los tenemos que cacular a mano
+
+```{r}
+# Scores primeras variables canónicas
+z1 <- X %*% cca1$xcoef[,1]
+w1 <- Y %*% cca1$ycoef[,1]
+scores1 <- cbind(z1,w1)
+plot(scores1)
+```
+
+La relación entre las segundas direcciones canónicas
+```{r}
+# Scores segundas variables canónicas
+scores2 <- cbind(X %*% cca1$xcoef[,2],Y %*% cca1$ycoef[,2])
+plot(scores2)
+```
+
+Para ver que las primeras y segundas variables canónicas no están correlacionadas:
+```{r}
+# Relación entre la primera y segunda variable canónica x
+scoresx <- cbind(X %*% cca1$xcoef[,1],Y %*% cca1$ycoef[,2])
+plot(scoresx) # se puede ver que son ortogonales
+cor(scoresx)
+
+# Relación entre la primera y segunda variable canónica y
+# También son ortogonales
+scoresy <- cbind(Y %*% cca1$ycoef[,1],Y %*% cca1$ycoef[,2])
+plot(scoresy)
+cor(scoresy) 
+```
+
+Con `CCA` sí se obtienen los scores
+
+```{r}
+par(mfrow=c(1,2))
+# gráfica de la primer par de variables canónicas
+plot(cca2$scores$xscores[,1],cca2$scores$yscores[,1], main = "Primeras correlaciones canónicas")
+plot(cca2$scores$xscores[,2],cca2$scores$yscores[,2], main = "Segundas correlaciones canónicas")
+```
+
+Otras gráficas que podemos obtener son las correspondientes a los biplots:
+
+```{r}
+plt.cc(cca2, var.label = T)
+```
+
+
+### Un poco más de información: `candisc`
+
+la función `cancor` en `candisc` hace un poco más del trabajo por nosotros
+
+```{r}
+cca3 <- candisc::cancor(X,Y)
+cca3
+plot(cca3)
+summary(cca3)
+head(cca3$scores$X)
+head(cca3$scores$Y)
+```
+
+
+## Ejemplo 2: COMBO-17 (Izenman, sección 7.3.2)
+
+Los datos consisten en un subconjunto de variables de un catálogo de objetos astronómicos (estrellas, galaxias, quasares, etc.) con diferentes mediciones de brillo. COMBO-17 significa "Classifying Objects by Medium-Band Observations in 17 filters". En el conjunto de datos hay 3,462 galaxias de la región conocida como *Chandra Deep field South*
+
+![Imagen del Chandra Deep Field South. Más de 100,000 galaxias](https://cdn.eso.org/images/thumb700x/eso0302a.jpg)
+
+```{r}
+combo17 <- read.csv("https://github.com/jvega68/EA3/raw/master/datos/COMBO17.csv")
+dim(combo17)
+```
+
+Las variables en el conjunto $Y$ correspondientes a magnitudes de brillo en 10 bandas son:
+`UjMag`, `BjMag`, `VjMag`, `usMag`, `gsMag`, `rsMag`, `UbMag`,`BbMag`, `VnMag` y `S280Mag` de luz. Las otras variables en este conjunto son los brillos observados en 13 bandas en sucesión de 420 nm en ultrvioleta a 915 nm en el rojo extremo: `W420F_E`,... ,`W914F_E`.
+
+Las variables del conjunto $X$ son `RMag`, `ApD_Rmag`, `mu_max`, `MC_z`, `MC_z_ml`, `chi2red`. Estas variables corresponden a magnitudes y calibraciones del telescopio utilizado. 
+
+Se consideran $p=23$ variables en el conjunto $Y$ y $q=6$ variables en el conjunto $X$. El conjunto contiene algunas otras variables que o son redundantes o no se usan (el archivo tiene 65 variables)
+
+
+```{r}
+combo17a <- combo17 %>%
+            dplyr::select(!starts_with("e")) # se quitan las variables de error
+
+corrplot(cor(combo17a),method = "ellipse", tl.cex = 0.5)
+
+combo17b <- combo17a %>%
+            dplyr::select(-UFS,-BFS,-VFD,-RFS,-IFD,-Nr) %>%  # variables redundantes
+            na.omit  # quita los casos con datos faltantes
+
+corrplot(cor(combo17b),method = "ellipse", tl.cex = 0.5)
+```
+
+
+haciendo el análisis de correlaciones canónicas: 
+
+```{r}
+X <- as.matrix(combo17b[,1:6])
+Y <- as.matrix(combo17b[,7:29])
+m1 <- stats::cancor(x = X,y = Y,xcenter = F,ycenter = F)
+m1
+```
+
+Vista de correlación
+
+```{r}
+img.matcor(matcor(X, Y), type = 2)
+```
+
+¿Cómo se calculan los scores?
+
+```{r}
+xscores <- X %*% m1$xcoef
+yscores <- Y %*% m1$ycoef
+```
+
+
+Gráficas de los $6 = \min{p,q}$ pares de variables canónicas. Se puede apreciar la presencia de algunos puntos atipicos. 
+
+```{r}
+par(mfrow=c(2,3))
+for(i in 1:6)plot(xscores[,i],yscores[,i], main = paste("Par de correlaciones canónicas",i,"\ncorrelación:",round(m1$cor[i],3)),
+                  pch = 16, cex = 0.5,
+                  xlab = "Características telescopio",
+                  ylab = "Brillo y luminosidad")
+```
+
+Vale la pena hacer el anáisis con y sin los posibles outliers, pues no sabemos si son o no influenciales en la construcción de las series.
+
+```{r}
+mod <- cc(X,Y)
+mod$cor
+plt.cc(mod,var.label = T)
+```
+
+# Caso para regularización: 
+
+Estudio de nutrición en ratones. Se estudiaron 40 ratones, con los siguientes dos grupos de variables: 
+
+- expresiones de 120 genes medidos en células de hígado que son potencialmente relevantes en el contexto de la nutrición.
+- concentraciones de 21 ácidos grasos hepáticos medidos por cromatografía
+
+
+
+```{r}
+data("nutrimouse")
+X <- as.matrix(nutrimouse$gene)
+Y <- as.matrix(nutrimouse$lipid)
+```
+
+Visualización de las correlaciones: 
+
+```{r}
+R <- matcor(X,Y)
+img.matcor(R, type = 2)
+```
+
+Como hay más variables que unidades, reducimos el número de variables artificialmente: 
+
+```{r}
+Xr <- as.matrix(nutrimouse$gene[,sample(1:120, size = 10)])
+mod <- cc(Xr,Y)
+barplot(mod$cor, xlab = "dimensión",
+        ylab = "CC", names.arg = 1:10,
+        ylim = c(0,1))
+plt.cc(mod)
+```
+
+
+
+

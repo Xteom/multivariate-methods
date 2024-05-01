@@ -1,0 +1,101 @@
+---
+title: "Ejemplos de Análisis de Factores"
+lang: es
+author: "Jorge de la Vega"
+date: "29 03 2024"
+format: 
+  html:
+    page-layout: full
+    html-math-method: katex
+    embed-resources: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r, include = F}
+knitr::opts_chunk$set(comment=NULL)
+```
+
+En este laboratorio la intención es practicar el análisis exploratorio de factores (AF). Los siguientes paquetes son útiles en AF:
+
+- `corrplot`: gráficas informativas de una matriz de correlaciones.
+- `psych`: funciones relevantes para PCA y FA
+- `FactoMineR`:  Se puede  utilizar para mejorar las gráficas mostradas
+- `EFAtools`: Herramientas para análisis factorial exploratorio
+
+```{r}
+options(width = 150)
+library(corrplot) 
+library(psych)
+library(FactoMineR)  
+```
+
+# Ejemplo: 9.3
+
+```{r}
+R <- matrix(c(1, 0.02, 0.96, 0.42, 0.01,
+              0.02, 1, 0.13, 0.71,0.85,
+              0.96, 0.13, 1, 0.5, 0.11,
+              0.42, 0.71, 0.5, 1, 0.79,
+              0.01, 0.85, 0.11, 0.79, 1), nrow = 5)
+rownames(R) <- colnames(R) <- c("Taste","Good buy for money","Flavor","Suitable for snack","Provides energy")
+corrplot(R, method = "ellipse", order="ward")
+```
+
+Obtenemos el espectro de $R$: 
+
+```{r}
+p <- nrow(R)
+(Spec <- eigen(R))
+cumsum(Spec$values)/p  # % de variación explicada
+
+# cargas: 
+F1 <- round(sqrt(Spec$values[1])*Spec$vectors[,1],2)
+F2 <- round(sqrt(Spec$values[2])*Spec$vectors[,2],2)
+# Usndo componentes principales: 
+
+PCA <- princomp(covmat = R)
+PCA$sdev[1]*PCA$loadings[,1]
+```
+
+La función `factanal` no coincide con la solución porque realiza estimación por máxima verosimilitud:
+
+```{r}
+factanal(covmat = R, factors = 2, rotation = "none")
+```
+
+La función `fa` de `psych` ofrece diferentes métodos de estimación. Incluye el factor principal (`fm = "pa"`).
+
+```{r}
+fa(r = R, nfactors = 2, rotate = "none")
+```
+
+# Ejemplo 9.4: Datos de mercado
+
+Nota: tomar en cuenta que los datos no son exactamente los del libro, porque este conjunto de datos tiene 100 observaciones, y el libro tiene 103. 
+
+```{r}
+X <- read.delim("https://raw.githubusercontent.com/jvega68/EA3/master/datos/J%26W/T8-4.DAT", 
+                header = F, sep ="")
+names(X) <- c("JPM","Citi","WF","RDS","Exxon")
+```
+
+Evaluación para ver si es posible aplicar AF:
+
+```{r}
+R <- cor(X)
+corrplot(R, method = "ellipse")
+KMO(R)
+cortest.bartlett(R, n = nrow(X)) 
+# se rechaza la prueba de hipótesis, por lo que el FA es factible
+```
+
+
+```{r}
+factanal(X, factors = 1, rotation = "none")
+factanal(X, factors = 2, rotation = "none")
+```
+
+
+
+

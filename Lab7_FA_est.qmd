@@ -1,0 +1,190 @@
+---
+title: "Ejemplos de Análisis de Factores (de la presentación)"
+lang: es
+author: "Jorge de la Vega"
+date: "02 04 2024"
+format: 
+  html:
+    page-layout: full
+    html-math-method: katex
+    embed-resources: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r, include = F}
+knitr::opts_chunk$set(comment=NULL)
+```
+
+En este laboratorio la intención es practicar el análisis exploratorio de factores (AF). Los siguientes paquetes son útiles en AF:
+
+- `corrplot`: gráficas informativas de una matriz de correlaciones.
+- `psych`: funciones relevantes para PCA y FA
+- `FactoMineR`:  Se puede  utilizar para mejorar las gráficas mostradas
+
+```{r}
+#| message: FALSE
+options(width = 150)
+library(corrplot) 
+library(psych)
+library(FactoMineR)  
+```
+
+# Ejemplo 2: Preferencias de consumo
+Considérese la matriz para 5 variables obtenidas en un estudio de preferencias de consumo. Las variables consideradas son:
+
+- Gusto (G)
+- Buena compra por el dinero pagado (B)
+- Sabor (S)
+- Adecuado como tentempie (T)
+- Provee mucha energía (E)
+
+La matiz de correlación, obtenida de las respuestas en una escala de Likert de 7 puntos es la siguiente:
+
+```{r}
+# Matriz de correlación dada:
+R <- matrix(c(1, 0.02, 0.96, 0.42, 0.01,
+              0.02, 1, 0.13, 0.71, 0.85,
+              0.96, 0.13, 1, 0.5, 0.11,
+              0.42, 0.71, 0.5, 1, 0.79,
+              0.01, 0.85, 0.11, 0.79, 1), ncol = 5)
+colnames(R) <- row.names(R) <- c("G", "B", "S", "T", "E")
+```
+
+Obtener la descomposición espectral:
+
+```{r}
+# sacamos los factores de la forma en la que se construye la matriz de cargas
+Spec <- eigen(R)
+F1 <- round(sqrt(Spec$values[1])*Spec$vectors[1], 2)
+F2 <- round(sqrt(Spec$values[2])*Spec$vectors[2], 2)
+(Lfit1 <- cbind(F1, F2))
+
+# otra alternativa con componentes principales
+PC <- princomp(covmat=R)
+G1 <- round(PC$sdev[1]*PC$loadings[,1], 2) #loadings son las cargas
+G2 <- round(PC$sdev[2]*PC$loadings[,2], 2)
+(Lfit2 <- cbind(G1, G2))
+
+
+# se pueden invertir los signos, mientras que se inviertan de todos, no hay problema
+# si solo se invierten unos ahí si está mal 
+```
+
+Primero revisamos la factibilidad del análisis factorial exploratorio, vía las correlaciones. ¿Cuántos factores se sugieren? 
+
+```{r}
+# para hacer la prueba forma usamos la prueba de bartlett 
+KMO(R)
+cortest.bartlett(R, n = 100) # rechazo significa que está bueno el estimador
+```
+
+
+Primer método de estimación: Vía el método de  componentes principales, obtenemos las cargas $L$: 
+
+```{r}
+# número de variables. No hay datos en este ejercicio
+p <- 5
+m <- 2
+m <- 100 #arbirtario
+
+# ¿Cuál es la proporción de varianza explicada por los factores? 
+# los eigne valores nos dicen la proporcion de varianza
+cumsum(Spec$values/p)
+
+
+# Calculo de las cargas: 
+Lfit1
+
+# ¿Cuáles son las comunalidades? (salen de los cuadrados de las cargas)
+(h <- diag(Lfit1 %*% t(Lfit1)))
+
+# Unicidades o factores específicos? (es lo que le falta a la comunalidad para completar a la varianza)
+(psihat <- 1-h)
+
+# Varianza Residual 
+VarRes <- R - (Lfit1 %*% t(Lfit1) + diag(psihat))
+# es la info que perdemos si consideramos estos dos factores
+
+# Equivalentemente usando componentes principales: 
+# Notar que puede haber cambio de signos.
+```
+
+Segundo método de estimación: vía máxima verosimilitud.
+
+```{r}
+(f1 <- factanal(covmat = R, factors = 2, rotation = "none"))
+plot(Lfit1[,1], Lfit2[,2], ylim=c(-1,1), xlim=c(-1,1))
+points(f1$loadings[,1], f1$loadings[,2], col="red", pch = 19)
+abline(h=0, v=0, lty=3)
+legend("bottomleft", legend=c("CP", "MV"), pch=c(1,19), 
+       col = c("black", "red")) #componentes principales vs max verosimilitud
+# ver cuales son las etiquetas de cada punto (en Lfit podemos ver sus etiquetas)
+
+```
+
+La función `fa` de `psych` ofrece diferentes métodos de estimación. Incluye el factor principal (`fm = pa`).
+
+```{r}
+(fit2 <-  fa(R, nfactors = 2, rotate = "none")) #no queremos que lo rote para interpretar los calculos tal cual
+#h2 comunalidades
+#u2 unicidades
+#com en cuantos factores aparece/pertenece la variable (complejidad)
+# mientras menos complejidad mejor
+diagram(fit2) #factores asociados a que variables (path diagram)
+#cuando hacemos rotaciones podemos correlacionar los valores
+
+# hay rotaciones que pueden correlacionar los factores y podemos ver la relacion entre ellos
+
+```
+
+Comparar los dos procedimientos de estimación: 
+
+```{r}
+
+```
+
+Prueba para la dimensión: 
+
+```{r}
+# Suponiendo que n = 100 (no tenemos datos de la encuesta en este ejemplo)
+n <- 100
+p <- 5
+m <- 2
+
+(denom <- det(R))
+(num <- det(Lfit1 %*% t(Lfit1) + diag(psihat)))
+(prueba <- n*log(num/denom)
+(pschisq(prueba, (0.5*((p-m)^2-(p-m))), lower.tail = F)) 
+```
+
+
+# Ejemplo 3: Datos de mercado
+
+```{r}
+stock <- read.csv("https://raw.githubusercontent.com/fcbarbi/AMSA/master/csv/T0804.csv", header = T)
+head(stock)
+```
+
+Determina la viabilidad del ajuste usando KMO y la prueba de Bartlett
+
+```{r}
+
+```
+
+¿Cuántos factores se sugieren?
+```{r}
+
+```
+
+Hacer un diagrama
+
+```{r}
+
+```
+
+
+
+
+
+

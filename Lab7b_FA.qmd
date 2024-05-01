@@ -1,0 +1,251 @@
+---
+title: "Ejemplos de Análisis de Factores (de la presentación)"
+lang: es
+author: "Jorge de la Vega"
+date: "02 04 2024"
+format: 
+  html:
+    page-layout: full
+    html-math-method: katex
+    embed-resources: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r, include = F}
+knitr::opts_chunk$set(comment=NULL)
+```
+
+```{r}
+options(width = 150)
+library(corrplot) 
+library(psych)
+# install.packages("GPArotation")
+library(GPArotation) # Este paquete lo busca psych
+```
+
+# Ejemplos adicionales de FA y ejemplos de rotaciones. 
+
+
+## Ejemplo 3: Datos de mercado
+
+```{r}
+stock <- read.csv("https://raw.githubusercontent.com/fcbarbi/AMSA/master/csv/T0804.csv", header = T)
+head(stock)
+
+corrplot(cor(stock), method = "ellipse", order = "hclust")
+
+# Viabilidad
+KMO(stock)
+bartlett.test(stock) # directa de stats
+cortest.bartlett(cor(stock), n = nrow(stock)) # opción en psych de la prueba de esfericidad++++
+
+# Estimación
+(m1 <-  fa(stock, nfactors = 2, rotate = "none", fm = "ml"))  # máxima verosimilitud
+(m2 <- fa(stock, nfactors = 2, rotate = "none", fm = "pa"))    
+fa.plot(m1, xlim = c(-1,1), ylim = c(-1,1))  # de psych
+points(m2$loadings, col = "red")  # para comparar soluciones. 
+
+# Podemos hacer rotaciones "manuales"
+par(mfrow=c(1,2))
+fa.plot(m1, title = "No rotada", xlim = c(-1,1), ylim = c(-1,1))
+factor.rotate(m1, angle = -50,plot = T, ylim =c(-1,1), xlim= c(-1,1))
+
+# Diagrama resumen
+fa.diagram(m1)
+
+# Comparación de rotaciones (algunos ejemplos)
+par(mfrow=c(1,1))
+plot(m2$loadings, pch = 19, cex = 2, xlim = c(-1,1), ylim = c(-1,1))
+abline(h=0, v=0, lty = 3)
+points(Varimax(m2$loadings)[[1]],col = "red", pch = 19, cex = 2)
+points(varimin(m2$loadings)[[1]],col = "red4", pch = 19, cex = 2)
+points(promax(m2$loadings)[[1]], col = "green", pch = 19, cex = 2)
+points(oblimin(m2$loadings)[[1]], col = "blue", pch = 19, cex = 2)
+points(oblimax(m2$loadings)[[1]],col = "pink", pch = 19, cex = 2)
+points(quartimax(m2$loadings)[[1]],col = "orange", pch = 19, cex = 2)
+```
+
+Cálculo de los scores asociados a análisis factorial
+
+```{r}
+# Incorporamos en la estimación: 
+(m1 <- fa(stock, nfactors = 2, rotate = "varimax", fm = "ml", scores = "regression"))  # máxima verosimilitud
+biplot(m1)  
+abline(h = 0, v = 0, lty = 3)
+```
+
+## Ejemplo 4: datos de biblioteca
+
+Este ejemplo utiliza datos de Thompson[2004]. Los datos corresponden a una muestra aleatoria de un estudio sobre la percepsión de los usuarios en la calidad del servicio  de las librerías académicas en los Estados Unidos y Canadá. Se miden 12 variables en 100 estudiantes graduados y 100 profesores. Los datos están en el archivo *Encuesta.csv*. 
+
+Los datos corresponden a las siguientes definiciones:
+
+- id: id del caso, 
+- RoleType: estudiante (2) o facultad (3)
+- p1: Disposición de apoyar a los usuarios
+- p2: Dar a los usuarios atención individualizada
+- p3: Los empleados que tienen trato con los usuarios son cuidadosos
+- p4: Los empleados son consistentemente cortéses
+- p5: Un paraíso de quietud y soledad
+- p6: Un lugar meditativo
+- p7: Un ambiente contemplativo
+- p8: Espacio que facilita el estudio silencioso
+- p9: Colecciones impresas completas
+- p10: Títulos de revistas es completo
+- p11: La biblioteca interdisciplinaria requiere ser atendida
+- p12: Préstamo interbibliotecario/ envío oportuno de documentos
+
+
+```{r}
+datos <- read.csv("https://raw.githubusercontent.com/jvega68/EA3/master/datos/Encuesta.csv")
+head(datos) #muestra los primeros datos de la matriz
+id <- datos[,1]
+RoleType <- datos[,2]
+datos <- datos[ , -(1:2)] # redefinimos el conjunto para tener solo las preguntas del cuestionario
+```
+
+En el presente ejemplo, consideraré la Estrategia de aplicación de AF que se mencionó en la clase, y agregaré un par de verificaciones adicionales para la covarianza que pueden ser útiles. Lo primero a hacer es revisar la matriz de correlaciones de los datos. Se ha comentado que si no hay correlaciones significativas entre las variables, entonces no tiene mucho sentido aplicar el AF o CP. Vamos a considerar visualizar las variables correlacionadas:
+
+```{r}
+corrplot(corr = cor(datos), method = "ellipse", order = "hclust")
+```
+
+La visualización muestra dos cosas: (1) todas las correlaciones son positivas y (2) hay ciertas correlaciones fuertes entre grupos de variables. Por ejemplo, las variables $\{p1,p2,p3,p4\}$ estan fuertemente asociadas positivamente, mientras que lo mismo pasa en el grupo $\{p5,p6,p7,p8\}$. Un poco más débil, se ve una relación en las variables $\{p9,p10,p11\}$. Entonces el análisis factorial puede confirmar estas relaciones.
+
+Adicional a la visualización de la correlación, podemos aplicar dos pruebas adicionales:
+
+1. la prueba de esfericidad de Bartlett para probar $H_0: cor(X) = I_p \quad vs \quad H_a:cor(X)\neq I_p$  (agregada su descripción a la presentación sobre el tema de AF).
+
+2. La prueba KMO (Kaiser-Meyer-Olkin) de adecuación de la muestra. La prueba mide la adecuación muestral de cada variable en el modelo y de todo el modelo completo.
+
+```{r}
+# Pruebas de esfericidad:
+bartlett.test(datos)                  # directa en stats
+cortest.bartlett(cor(datos), n = 200) # opción en psych de la prueba de esfericidad
+
+# Prueba KMO: El rango para evaluarlo se puede ver en la ayuda de la función:
+# In his delightfully flamboyant style, Kaiser (1975) suggested that 
+# KMO > .9 were marvelous, 
+# in the .80s, mertitourious, 
+# in the .70s, middling, 
+# in the .60s, medicore, 
+# in the 50s, miserable, and 
+# less than .5, unacceptable.
+KMO(cor(datos)) 
+```
+
+De acuerdo a las estadísticas mostradas, ambas pruebas corroboran que se puede aplicar el análisis factorial a los datos.
+
+Una vez validada la viabilidad del análisis, se sugiere realizar un análisis de factores basado en componentes principales. Este caso se realizará de dos maneras: 
+
+1. A "mano"
+2. Usando las funciones ya definidas en los paquetes.
+
+### FA a mano usando componentes principales
+
+Obtenemos las componentes principales y consideramos aquellas componentes que tengan varianza mayor al promedio de los eigenvalores de la matriz de covarianzas (o en el caso de usar correlación, usamos las componentes que sean mayores que 1) Utilizaremos para este ejercicio la matriz de correlaciones.
+
+```{r}
+R <- cor(datos)  #matriz de correlaciones
+R_de <- eigen(R)  #descomposición espectral 
+datos.pca <- princomp(x = datos, cor = T) #obten las componentes principales
+mean(R_de$values)   #valor de referencia para el número de componentes a considerar
+datos.pca$sdev^2 #varianzas de las CP
+```
+
+El criterio definido sugiere usar las primeras 3 CP para la solución de componentes principales.  También podemos ver el screeplot y confirmar que esperamos tres factores.
+
+```{r}
+screeplot(datos.pca)
+abline(h = mean(R_de$values)) #línea de referencia con correlaciones.
+```
+
+
+Con los primeros tres vectores propios calculamos la matriz de cargas
+
+```{r}
+ind <- 1:3
+Lhat <- NULL
+for(i in ind) Lhat <- cbind(Lhat,R_de$vectors[ ,i] * sqrt(R_de$values[i])) # arma la matriz de cargas
+Lhat  # cargas estimadas
+
+# Calculamos la matriz residual
+Psihat <- diag(diag(R - (Lhat %*% t(Lhat)))) # matriz de unicidades
+Rhat <- Lhat %*% t(Lhat) + Psihat
+comunalidades <- diag(Lhat %*% t(Lhat))      # comunalidades
+unicidades <- diag(Psihat)                   # unicidades
+comunalidades
+unicidades
+# Calculamos la suma de los cuadrados de la matriz residual y comparamos con la suma de los eigenvalores del 4 al 12:
+sum((R - Rhat )^2)
+sum(R_de$values[-ind]^2)
+```
+
+Vemos que el error no es muy grande.
+
+### Usando funciones del paquete _psych_
+
+En lo que sigue terminaremos el análisis usando las funciones del paquete _psych_. La descripción de los datos se puede hacer con más información que la función usual _summary_. Incluso podemos ver una gráfica que muestra las distribuciones individuales de cada variable a través de histogramas en la diagonal, la estimación de la media de cada par de variables, los scatterplots con regresiones en la parte baja y en la parte alta de la matriz las correlaciones.
+
+```{r}
+describe(datos)
+pairs.panels(datos, pch = ".")
+```
+
+En la salida de este paquete ya tenemos todas las cantidades que calculamos "a mano" en la sección previa, y un poco más de información. Por ejemplo, la columna *com* muestra un índice de complejidad de Hoffman, que no usaremos. 
+
+```{r}
+m1 <- pca(r = R, nfactors = 3, rotate = "none")
+```
+
+En esta salida hace una prueba no paramétrica para verificar la hipótsis de que el número de componentes dado es suficiente. En este caso, se mide con la raíz del error cuadrático medio como una aproximación a lo que sería el p-value. En este caso vemos que estamos en el margen.
+
+Podemos graficar las componentes principales, para ver cómo se agrupan las variables. Una forma de verlo es usando la función _plot_
+
+```{r}
+plot(m1, labels = colnames(datos), adj = 0) # adj=0 mueve las etiquetas de los puntos a la derecha
+```
+
+Vemos que en la dirección de las dos primeras componentes, las preguntas se agrupan aproximadamente en tres grupos: p1-4, p5-8 y p9-12. Esta separación es más clara en la gráfica de la segunda vs tercera componente. Agregar una cuarta componente básicamente separa la pregunta 12, que podría considerarse como una especie de servicio especial, un servicio externo (vs interno). Los factores identficados están relacionados respectivamente con es **materiales**, **el ambiente** y **el servicio** de la biblioteca. Estos pueden ser los tres factores subyacentes.
+
+Seguimos con el análisis de tres factores. Intentemos una rotación varimax para ver si mejora la explicación:
+
+```{r}
+m1varimax <- pca(r= R, nfactors = 3, rotate = "varimax")
+m1varimax
+plot(m1varimax, labels = colnames(datos), adj = 0)
+```
+
+Vemos que en la dirección de esta rotación, las cargas separan mejor los datos, así que se ve más claro la separación de los tres factores.
+
+Ahora consideramos un desarrollo basado en máxima verosimilitud, considerando la rotación varimax. En lugar de utilizar _factanal_, usaré directamente la función _fa_, (los ejemplos con la otra función están en la presentación dada en clase).
+
+La función _fa_ nos  devuelve mucha más información, pero básicamente llegamos a las mismas conclusiones que en el caso anterior.
+
+```{r}
+mf1 <- fa(r = datos, nfactors = 3, fm = "ml", rotate = "varimax")
+mf1
+plot(mf1, labels = colnames(datos), adj = 0)
+```
+
+Podemos adicionalmente hacer una gráfica que muestre la relación de dependencia de las preguntas a los factores, como un diagrama estructural con las respectivas cargas. Este tipo de diagramas es muy común en modelos estructurales:
+
+```{r}
+diagram(mf1)
+```
+
+Por último, podemos ver una gráfica de biplot. Para eso necesitamos, además de las variables, los scores de los factores (i.e. la estimación de la evaluación de las observaciones en cada factor). Esta gráfica se puede hacer con la función _biplot_ del paquete _stats_ o la función _biplot.psych_ que hace una extensión de las función básica. Ambas en este caso dan básicamente la misma gráfica.
+
+Usaré además la variable que distingue a los profesores de los alumnos para ver sus respectivos scores.
+
+```{r}
+biplot(mf1, cex = 1.2, pch = c(19,20)[RoleType-1], group = RoleType)
+```
+
+
+### Referencias
+
+1. Thompson, Bruce (2004) Exploratory and Confirmatory Factor Analysis: Understanding Concepts and Applications. American Psychological Association.
+
+
