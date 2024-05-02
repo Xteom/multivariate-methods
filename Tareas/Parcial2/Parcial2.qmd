@@ -1,0 +1,300 @@
+---
+title: 'Métodos Multivariados: Parcial 2'
+author: "Mateo De La Roche"
+published_date: "01/05/2024"
+editor: visual
+echo: true #código
+include: true #imprimir
+format: 
+  html:
+    page-layout: full
+    html-math-method: katex
+    embed-resources: true
+    output-file: MateoDeLaRoche-Parcial2.html
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+library(stats)
+library(MASS) 
+library(kernlab)
+library(caret)
+library(robustbase)
+library(ggplot2)
+library(MASS)  
+library(psych)
+library(klaR)
+
+set.seed(190748)
+```
+
+
+## Ejercicio 1
+
+El conjunto de datos `Harman23.cor` en el paquete `datasets` es una matriz de correlación de 8 medidas físicas tomadas en 305 niñas con edades entre 7 y 17 años.
+a. Realiza un análisis de factores de estos datos usando factanal(factors = m, covmat = Harman23.cor) donde m es el número de factores.
+```{r}
+data("Harman23.cor", package = "datasets")
+
+fa_result <- factanal(covmat = Harman23.cor, factors = 2, rotation = "varimax")
+(fa_result)
+```
+
+```{r}
+#cortest.bartlett(Harman23.cor, n = 305)
+```
+
+```{r}
+factanal(covmat = Harman23.cor, factors = 3, rotation = "varimax")
+```
+
+
+b. Varía el número de factores para encontrar un ajuste adecuado del modelo e interpretar las cargas de los factores resultantes.
+```{r}
+factanal(covmat = Harman23.cor, factors = 4, rotation = "varimax")
+```
+Parece ser que el ajuste adecuado del modelo se da cuando elegimos 4 factores ya que tenemos una buena proporción de varianza acumulada y también y p-value relativamente alto.
+
+Primer factor: height, arm.span, forearm, lower.leg
+segundo factor: weight, bitro.diameter, chest.grid
+tercer factor: chest.grid, lower.leg, weight
+cuarto factor: chest.width, arm.span
+
+Parece que los diferentes factores nos dicen diferentes proporciones en partes del cuerpo, cuales son las medidas que cada proporción contiene.
+
+c. ¿El análisis de componentes principales produce diferentes conclusiones cuando la opción de la matriz de correlación (cor = TRUE) se usa? ¿Qué análisis se debería preferir?
+Por la naturaleza del problema creo que sería más útil el análisis de factores ya que nos permite identificar las variables latentes, pca
+
+```{r}
+Harman23.cor
+```
+
+```{r}
+Harman23.cor
+eigen_values <- eigen(Harman23.cor$cov)
+(eigen_values$values)
+(eigen_values$vectors)
+```
+```{r}
+var_exp <- eigen_values$values / sum(eigen_values$values)
+cum_var_exp <- cumsum(var_exp)
+(var_exp)
+(cum_var_exp)
+```
+
+```{r}
+princomp(covmat = Harman23.cor, cor = TRUE)
+```
+```{r}
+princomp(covmat = Harman23.cor, cor = FALSE)
+```
+
+No hay diferencia porque ya estamos pasando correlaciones. 
+
+
+## Ejercicio 2
+
+El proyecto SAPA (Synthetic Aperture Personality Assessment) es una colección de datos psicológicos en la web. Un subconjunto de los datos está disonible en el paquete psych como bfi.Este subconjunto contiene datos en tres variables demográficas y 25 atributos de personalidad de 2800 voluntarios. Como ejemplos de estos atributos, se tiene:
+Yo sé cómo confortar a otros
+Perdí mi tiempo
+Hago amigos fácilmente
+Cada atributo se califica del 1 al 6 dependiendo de si el respondente siente que está de acuerdo con la afirmación en la escala de Likert de completamente de acuerdo (1) o completamente en desacuerdo (6). Ver help(bfi) para más detalles.
+
+a. Usar el comando complete.cases() para quitar a los individuos que tienen algún dato faltante en bfi
+```{r}
+data("bfi")
+
+bfi_clean <- bfi[complete.cases(bfi), ]
+colnames(bfi_clean)
+```
+
+b. Usar análisis factorial para agrupar juntos atributos de naturaleza similar. Trata de interpretar la naturaleza de los atributos que se agrupan juntos.
+```{r}
+#tomamos solo las columnas de atributos de personalidad
+fa_result <- fa(bfi_clean[, 1:25], nfactors=5, rotate="varimax")
+fa_result
+```
+```{r}
+fa.diagram(fa_result)
+
+```
+```{r}
+#help(bfi)
+```
+
+| A                                            | C                                      | E                                | N                              | O                                             |
+|----------------------------------------------|----------------------------------------|----------------------------------|--------------------------------|-----------------------------------------------|
+| A1. Am indifferent to the feelings of others. (q_146) | C1. Am exacting in my work. (q_124)    | E1. Don't talk a lot. (q_712)    | N1. Get angry easily. (q_952)  | O1. Am full of ideas. (q_128)                  |
+| A2. Inquire about others' well-being. (q_1162)       | C2. Continue until everything is perfect. (q_530) | E2. Find it difficult to approach others. (q_901) | N2. Get irritated easily. (q_974) | O2. Avoid difficult reading material. (q_316) |
+| A3. Know how to comfort others. (q_1206)             | C3. Do things according to a plan. (q_619) | E3. Know how to captivate people. (q_1205) | N3. Have frequent mood swings. (q_1099) | O3. Carry the conversation to a higher level. (q_492) |
+| A4. Love children. (q_1364)                          | C4. Do things in a half-way manner. (q_626) | E4. Make friends easily. (q_1410) | N4. Often feel blue. (q_1479) | O4. Spend time reflecting on things. (q_1738)  |
+| A5. Make people feel at ease. (q_1419)               | C5. Waste my time. (q_1949)            | E5. Take charge. (q_1768)        | N5. Panic easily. (q_1505)    | O5. Will not probe deeply into a subject. (q_1964) |
+
+
+
+Podemos ver como los factores se agrupan por la forma en la que el test está diseñado. 
+Factor 1: Ns, estabilidad emocional o cambios de de humor
+Factor 2: Es, sociabilidad 
+Factor 3: Cs, cosas relacionadas a la forma de trabajar
+Factor 4: As, preocupación por los demás
+Factor 5: Os, cosas relacionadas con la forma de pensar
+
+## Ejercicio 3
+
+En tiempos de estrés, el cuerpo pasa por un proceso llamado vaso-constricción en el cual las venas se cierran en las extremidades, forzando la sangre a los órganos centrales. La vaso-constricción puede ocurrir después de tomar un respiro profundo. El conjunto de datos vaso en el paquete robustbase resume la vaso-contricción (o no) de dedos de sujetos a lo largo de sus volúmenes y tasas de respiración.
+```{r}
+
+data(vaso)
+vaso
+```
+```{r}
+table(vaso$Y)
+```
+
+a. Grafica las tasas de respiración y los volúmenes usando diferentes colores para aquellos con y sin vaso-constricción. Aplica LDA para ver cómo se distinguen los dos grupos.
+
+
+
+```{r}
+ggplot(vaso, aes(x = Rate, y = Volume, color = as.factor(Y))) +
+  geom_point(alpha = 0.7) +
+  labs(color = "Vaso-constriction",
+       x = "Respiration Rate",
+       y = "Volume") +
+  theme_minimal()
+```
+
+
+```{r}
+lda_model <- lda(Y ~ Rate + Volume, data = vaso)
+plot(lda_model)
+```
+Podemos ver que si le distinguen pero existe una superposición entre los grupos.
+Repetir el análisis de la parte (a) pero primero toma logaritmos de las variables explicativas. ¿Qué análisis se prefiere?
+
+```{r}
+vaso$logRate <- log(vaso$Rate)
+vaso$logVolume <- log(vaso$Volume)
+
+lda_model_log <- lda(Y ~ logRate + logVolume, data = vaso)
+plot(lda_model_log)
+
+```
+Parece que sigue existiendo superposición, aunque seha reducido un poco, parece ser preferible hacer el LDA con la transformación.
+
+Vamos a repetir el análisis pero con la librería partimat.
+
+```{r}
+partimat(as.factor(Y) ~ Rate + Volume, data = vaso, method = "lda")
+```
+
+```{r}
+partimat(as.factor(Y) ~ logRate + logVolume, data = vaso, method = "lda")
+```
+Con partimat podemos ver que al aplicar la transformación, los errores cambian de clase.
+
+
+## Ejercicio 4
+El conjunto de datos musk en el paquete kernlab es un ejemplo de un problema de discriminación en un conjunto de datos grande. En este conjunto de datos hay 476 moléculas: 207 se clasifican como almizcle y las restantes 269 no son almizcle. 
+El objetivo es identificar una clasificación de los almizcles de los no-almizcles usando cualquier combinación de las 166 variables explicativas. Estas variables explicativas miden distancias moleculares en diferentes direcciones. Los datos originales están en https://archive.ics.uci.edu/ml/datasets/Musk+(Version+1) con información adicional que incluye una descripción completa de las variables explicativas.
+
+
+```{r}
+data(musk) 
+colnames(musk)
+
+split_indi <- createDataPartition(musk$Class, p = 0.80, list = FALSE)
+train <- musk[split_indi,]
+test <- musk[-split_indi,]
+head(train)
+```
+
+```{r}
+lda_model <- train(Class ~ ., 
+                   data = train,
+                   method = "lda", 
+                   metric = "Accuracy",
+                   trControl = trainControl(method = "cv"))
+lda_model
+```
+
+
+```{r}
+summary(lda_model)
+
+predictions <- predict(lda_model, test)
+confusionMatrix(predictions, test$Class)
+```
+
+Coeficientes
+
+```{r}
+lda_model$finalModel$scaling
+```
+
+
+## Ejercicio 5 
+
+El conjunto de datos mtcars tiene 11 diferentes atributos sobre autos. Estos atributos son o características diseñadas por ingenieros en la fábrica o atributos empíricos experimentados por el conductor. 
+* Los atributos de diseño son: cyl, disp, carb, drat, gear, vs
+* Los atributos de experiencia son: mpg, hp, wt, qsec, am
+
+```{r}
+data(mtcars)
+diseno <- mtcars[, c("cyl", "disp", "carb", "drat", "gear", "vs")]
+experiencia <- mtcars[, c("mpg", "hp", "wt", "qsec", "am")]
+```
+
+a. ¿Cómo se pueden combinar los atributos de diseño y mostrar que se relacionan con una combinación de los atributos de experiencia?
+```{r}
+corcan <- cancor(diseno, experiencia)
+corcan
+```
+para esto nos podemos fijar en los coeficientes de las correlaciones canónicas.
+```{r}
+corcan$xcoef
+```
+
+```{r}
+corcan$ycoef
+```
+
+b. ¿Cuál es la importancia relativa de cada atributo de diseño en crear la experiencia del conductor?
+
+cyl, disp, carb: tienen coeficientes más pequeños en la primera función canónica, indicando una influencia menor.
+drat, gear, vs: Tienen coeficiente más grandes en varias combinaciones canónicas, por lo cual se relacionnan más con la experiencia. 
+
+c. ¿Cuál experiencia del conductor domina o resume a las otras?
+
+La que tiene los coeficientes más altos es am.
+
+d. ¿Cuáles son los autos que aparecen al principio o al final de estas escalas?
+```{r}
+
+scores_diseno <- as.matrix(diseno) %*% corcan$xcoef
+scores_exp <- as.matrix(experiencia) %*% corcan$ycoef
+
+
+scores <- data.frame(Diseno = scores_diseno[, 1],  
+                     Experiencia = scores_exp[, 1])
+
+
+scores$car <- rownames(mtcars)
+
+
+autos_inicial <- head(scores[order(scores$Diseno), ], 5)  
+autos_final <- head(scores[order(-scores$Experiencia), ], 5)
+
+```
+
+```{r}
+autos_inicial
+```
+
+```{r}
+autos_final
+```
+
+
+
