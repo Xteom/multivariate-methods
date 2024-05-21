@@ -1,0 +1,228 @@
+---
+title: "Regresión Logística y Binomial"
+author: "Jorge de la Vega"
+lang: es
+date: 09 05 24
+format: 
+  html:
+    page-layout: full
+    html-math-method: katex
+    embed-resources: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, comment=NULL)
+options(scipen=6)
+```
+
+## Ejemplos de Modelos lineales generalizados I
+
+### Regresión logística 
+
+#### Estimación
+
+Los siguientes datos son una muestra de un estudio de panel de la Dinámica de Ingreso (Mroz, T. (1987): ”The Sensitivity of an Empirical Model of Married Women’s Hours of Work to Economic and Statistical Assumptions,” _Econometrica_, Vol.55, 765-799.). La respuesta es la participación de las mujeres casadas en la fuerza laboral.
+
+Las variables son:
+
+- `lfp`: participación de la esposa en la fuerza laboral
+- `k5`: número de niños menores a 5 años
+- `k618`: número de niños de 6 a 18 años
+- `age`: edad de la esposa
+- `wc`: si la esposa asistió al colegio
+- `hc`: si el esposo asistió al colegio
+- `lwg`: logaritmo del salario estimado de la esposa. El logaritmo del salario estimado de la esposa se calcula como el logaritmo de su sueldo real si trabaja, y si no trabaja, entonces se imputa como el valor de predicción de una regresión de los logs de los salarios sobre los otros predictores para mujeres en la fuerza laboral.
+- `inc`: ingreso de la familia excluyendo el ingreso de la esposa
+
+```{r}
+library(car) # paquete Companion to Applied Regression de Fox & Weisberg (2009)
+data(Mroz)
+str(Mroz)
+head(Mroz)
+```
+
+Ajustamos un modelo logístico. Podemos definir la función liga a usar dentro de la familia. Si no se especifica, se usa la función liga natural
+
+```{r}
+# podemos cambiar link por probit, cloglog
+mod1 <- glm(lfp ~ k5 + k618 + age + wc + hc + lwg + inc,
+            family = binomial(link=logit), data = Mroz)
+```
+
+Los resultados se reportan de manera similar a los modelos de regresión lineal. En la salida se menciona que el parámetro de dispersión $\phi=1$. 
+
+Los `z-values` corresponden a las pruebas de Wald para cada coeficiente, y hace referencia a que la distribución de referencia para las pruebas es la distribución normal, y no la $t$ como en RLM.
+
+La devianza nula y los grados de libertad corresponden al modelo que tiene sólo una constante.La devianza residual corresponde al modelo ajustado. 
+
+También se reporta el número de iteraciones en el método IWLS.
+
+```{r}
+summary(mod1)
+```
+
+Podemos obtener los momios de éxito estimados:
+
+$$\frac{\hat{\mu}({\bf x})}{1-\hat{\mu}({\bf x})} = \exp(b_0)\exp(b_1x_1)\cdots\exp(b_px_p)$$
+
+Los exponentes de los coeficientes estimados se llaman _factores de riesgo_.
+
+La interpretación es como sigue: si la esposa aumenta su edad en 1 año, y se mantienen los otros predictores constantes, se multiplican los momios de pertenecer a la fuerza laboral por $\exp(b_3)=\exp(-0.062871) = `r exp(-0.062871) `$, reduciendo los momios en 6\%.
+
+Para obtener todos los factores de riesgo y sus respectivos intervalos de confianza, podemos calcular lo siguiente:
+
+```{r}
+#la función confinit calcula intervalos usando la log-verosimilitud en lugar de Wald:
+round(exp(cbind(Estimate = coef(mod1), confint(mod1))), 2)
+```
+
+Por ejemplo, una mujer que fue al colegio tiene momios de trabajar 2.24 veces mayores que una mujer que no fue al colegio, con todos los otros predictores constantes.
+
+#### Análisis de devianza
+
+Para comparar modelos anidados como lo hacemos en los modelos lineales, usamos `anova`. Se compara el cambio en la desvianza y se compara contra $\chi^2_{(glG-glch)}$.
+
+Por ejemplo, quitamos las variables de número de niños y colegio para el esposo y comparamos:
+
+```{r}
+mod2 <- update(mod1,. ~ . -k5 -k618 -hc)
+summary(mod2)
+anova(mod2,mod1,test="Chisq") #primero el modelo chico y luego el grande.
+```
+
+#### Valores ajustados
+
+La función `predict` da predicciones para GLM's. Los valores que devuelve por default son los valores ajustados:
+
+
+```{r}
+# Devuelve los valores ajustados, del predictor lineal:
+head(predict(mod1))
+# Devuelve las probabilidades ajustadas:
+head(predict(mod1,type = "response"))
+```
+
+Podemos obtener la curva logística ajustada:
+
+```{r}
+plot(predict(mod1), predict(mod1,type = "response"),
+     main= "Logística ajustada",
+     xlab = expression(eta(x)), 
+     ylab = expression(mu(x)),ylim = c(-0.1,1.1))
+a <- predict(mod1)
+points(a,as.numeric(factor(mod1$data$lfp))-1)
+```
+
+
+### Datos Binomiales
+
+Para datos con respuesta binomial, se cuentan los éxitos en $N$ ensayos. Para especificar un modelo binomial en R se puede hacer de varias formas, como ya comentamos antes:
+
+1. Una matriz con dos columnas con número de éxitos $Y$ y el número de fracasos $N-Y$.
+2. La respuesta puede ser la proporción $Y/N$ especificando $N$ en `weights`
+
+Sin importar cómo se especifique, `glm`considera como respuesta a la proporción de éxitos $Y/N$ y la media de la respuesta $\mu({\bf x})$ se interpreta igual que en el modelo binario.
+
+Los siguientes datos corresponden a las votaciones de consultas populares de un nefasto presidente electo (ficticias):
+
+```{r}
+votaciones <- data.frame(
+      colonia = factor(rep(c("BJ","IZ"),c(3,3))),
+      preferencia = factor(rep(c("B","M","A"),2)),
+      votaron = c(91,121,64,214,284,201),
+      no.votaron = c(39,49,24,87,76,25),
+      logit.votacion = log(c(91,121,64,214,284,201)/c(39,49,24,87,76,25)) )
+votaciones
+```
+
+También podemos ver los datos como una tabla de contingencia:
+
+```{r}
+ ftable(xtabs(
+   cbind(votaron,no.votaron) ~ colonia + preferencia ,data=votaciones))
+```
+
+Se puede ajustar este modelo agrupado, o se pueden descomponer todos los conteos en el número total de casos para ajustar un modelo logístico.
+
+Ajustamos un modelo binomial con estas variables, considerando la interacción de la colonia y la preferencia. Noten que el modelo sólo tiene 6 datos y hay 6 parámetros a estimar, este es un ejemplo de un modelo saturado, por eso los residuales son 0:
+
+```{r}
+mod1 <- glm(cbind(votaron,no.votaron) ~ colonia*preferencia, 
+            family=binomial,data = votaciones)
+summary(mod1)
+# Todos los valores son exactamente los observados:
+predict(mod1,type="link")
+```
+
+Podemos quitar las interacciones:
+
+```{r}
+mod2 <- update(mod1,.~. - colonia:preferencia)
+summary(mod2)
+```
+
+Ajustando con pesos:
+
+```{r}
+N <- with(votaciones,votaron + no.votaron)
+mod3 <- glm(votaron/N ~ colonia*preferencia, #pasamos como refuencia las y
+            family=binomial,weights=N, data = votaciones)
+summary(mod3)
+
+```
+Los modelos log[isticos se pueden ajustar de 3 maneras diferentes: \b solitos, agrupados por frecuencia
+
+### Modelos Poisson para conteo 
+
+Los modelos Poisson surgen en dos contextos diferentes:
+
+1. Cuando se supone que la distribución condicional de la variable de respuesta  dados los predictores es Poisson.
+2. Cuando se analizan asociaciones en tablas de contingencia. En las tablas de contingencia, los conteos son multinomiales, no Poisson, condicionales, pero con una interpretación adecuada de los parámetros (condicionando los totales como ya vimos), los estimadores multinomiales se pueden obtener _como si_ fueran los conteos Poisson. 
+
+Entonces se puede usar el mismo enfoque de modelos GLM se puede usar para regresión Poisson y para modelos loglineales de tablas de contingencia.
+
+#### Estimación
+
+Los siguientes datos (Ornstein, 1976) corresponden a datos de 248 empresas canadienses, en donde cada empresa tiene un cierto número de vínculos (interlocks): estos son empates que una empresa mantuvo en virtud de que los miembros de su Junta de Gobierno y ejecutivos top también sirven como miembros de Juntas o como ejecutivos top en otras empresas del conjunto de empresas que están en los datos.
+
+Interesa hacer la regresión del número de vínculos con respecto a otras características de las empresas: sus activos, la nación controladora, y el sector de operación de la empresa.
+
+```{r}
+data("Ornstein")
+str(Ornstein)
+```
+
+Podemos ver la gráfica de la respuesta no condicional, hay 28 empresas sin vínculos, 19 con 1, 14 con 2, y así sucesivamente:
+
+```{r}
+vinculos <- xtabs(~ interlocks,data=Ornstein)
+vinculos
+plot(vinculos,type="h")
+```
+
+Podemos ajusta un modelo Poisson para estos datos:
+
+```{r}
+mod1 <- glm(interlocks ~ ., family = poisson, data = Ornstein)
+summary(mod1)
+```
+
+Los coeficientes en este modelo se interpretan como efectos en la escala log del conteo, así que hay que exponenciar los coeficientes para producir los efectos multiplicativos en la escala de conteo:
+
+```{r}
+exp(coef(mod1))
+```
+
+Podemos interpretar de la siguiente manera: Para una empresa gringa, mantiene en promedio 43.7\% de vinculos menos que las canadienses (que es la categoría base).
+
+Para ver los efectos, podemos usar el paquete `effects`. 
+
+- El eje vertical está en la escala del predictor lineal (logaritmo), pero las marcas son las etiquetas de la respuesta. 
+
+```{r}
+library(effects)
+plot(allEffects(mod1))
+```
+
