@@ -2,3 +2,4 @@ nilearn
 nimare
 numpy
 dtaidistance
+pandas
