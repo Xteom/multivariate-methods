@@ -1,0 +1,4 @@
+nilearn
+nimare
+numpy
+dtaidistance
